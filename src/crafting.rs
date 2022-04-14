@@ -1,0 +1,700 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
+
+use crate::api;
+use crate::gw2efficiency;
+
+use serde::{Deserialize, Serialize};
+
+use num_rational::Rational32;
+use num_traits::{Signed, Zero};
+
+use std::collections::{BTreeMap, HashMap, HashSet};
+use std::convert::TryFrom;
+
+use crate::config;
+
+#[derive(Debug, Copy, Clone)]
+pub struct EstimatedCraftingCost {
+    pub cost: i32,
+    pub source: Source,
+}
+
+// Calculate the lowest cost method to obtain the given item, using only the current high/low tp prices.
+// This may involve a combination of crafting, trading and buying from vendors.
+pub fn calculate_estimated_min_crafting_cost(
+    item_id: u32,
+    recipes_map: &HashMap<u32, Recipe>,
+    items_map: &HashMap<u32, api::Item>,
+    tp_prices_map: &HashMap<u32, api::Price>,
+    opt: &config::CraftingOptions,
+) -> Option<EstimatedCraftingCost> {
+    let item = items_map.get(&item_id);
+    let recipe = recipes_map.get(&item_id);
+    let output_item_count = recipe.map(|recipe| recipe.output_item_count).unwrap_or(1);
+
+    let crafting_cost = recipe.and_then(|recipe| {
+        if !opt.include_timegated && recipe.is_timegated() {
+            None
+        } else {
+            let mut cost = 0;
+            for ingredient in &recipe.ingredients {
+                let ingredient_cost = calculate_estimated_min_crafting_cost(
+                    ingredient.item_id,
+                    recipes_map,
+                    items_map,
+                    tp_prices_map,
+                    opt,
+                );
+
+                if let Some(EstimatedCraftingCost {
+                    cost: ingredient_cost,
+                    ..
+                }) = ingredient_cost
+                {
+                    cost += ingredient_cost * ingredient.count;
+                } else {
+                    return None;
+                }
+            }
+
+            Some(div_i32_ceil(cost, output_item_count))
+        }
+    });
+
+    let tp_cost = tp_prices_map
+        .get(&item_id)
+        .filter(|price| price.sells.quantity > 0)
+        .map(|price| price.sells.unit_price);
+
+    let vendor_cost = item.and_then(|item| {
+        if opt.include_ascended && item.is_common_ascended_material() {
+            Some(0)
+        } else {
+            item.vendor_cost()
+        }
+    });
+    let cost = tp_cost.inner_min(crafting_cost).inner_min(vendor_cost)?;
+
+    // give trading post precedence over crafting if costs are equal
+    let source = if tp_cost == Some(cost) {
+        Source::TradingPost
+    } else if crafting_cost == Some(cost) {
+        Source::Crafting
+    } else {
+        Source::Vendor
+    };
+
+    Some(EstimatedCraftingCost { cost, source })
+}
+
+#[derive(Debug, Copy, Clone)]
+struct PreciseCraftingCost {
+    cost: Rational32,
+    source: Source,
+}
+
+struct PreciseCraftingCostContext {
+    purchases: Vec<(u32, Rational32, Source)>,
+    crafted: Vec<u32>,
+    crafting_steps: Rational32,
+}
+
+// Calculate the lowest cost method to obtain the given item, with simulated purchases from
+// the trading post.
+fn calculate_precise_min_crafting_cost(
+    item_id: u32,
+    item_count: Rational32,
+    recipes_map: &HashMap<u32, Recipe>,
+    items_map: &HashMap<u32, api::Item>,
+    tp_listings_map: &mut BTreeMap<u32, ItemListings>,
+    context: &mut PreciseCraftingCostContext,
+    opt: &config::CraftingOptions,
+) -> Option<PreciseCraftingCost> {
+    let item = items_map.get(&item_id);
+    let recipe = recipes_map.get(&item_id);
+    let output_item_count =
+        Rational32::from(recipe.map(|recipe| recipe.output_item_count).unwrap_or(1));
+
+    let purchases_ptr = context.purchases.len();
+    let crafted_ptr = context.crafted.len();
+    let crafting_steps_before = context.crafting_steps;
+
+    let crafting_cost = recipe.and_then(|recipe| {
+        if !opt.include_timegated && recipe.is_timegated() {
+            None
+        } else {
+            let mut cost = Rational32::zero();
+            for ingredient in &recipe.ingredients {
+                // adjust ingredient count based on fraction of parent recipe that was requested
+                let ingredient_count =
+                    Rational32::from(ingredient.count) * (item_count / output_item_count);
+                let ingredient_cost = calculate_precise_min_crafting_cost(
+                    ingredient.item_id,
+                    ingredient_count,
+                    recipes_map,
+                    items_map,
+                    tp_listings_map,
+                    context,
+                    opt,
+                );
+                if let Some(PreciseCraftingCost {
+                    cost: ingredient_cost,
+                    ..
+                }) = ingredient_cost
+                {
+                    cost += ingredient_cost;
+                } else {
+                    return None;
+                }
+            }
+
+            Some(cost)
+        }
+    });
+
+    let tp_cost = tp_listings_map
+        .get(&item_id)
+        .and_then(|listings| listings.lowest_sell_offer(item_count));
+    let vendor_cost = item.and_then(|item| {
+        if opt.include_ascended && item.is_common_ascended_material() {
+            Some(Rational32::zero())
+        } else {
+            item.vendor_cost()
+                .map(|cost| Rational32::from(cost) * item_count)
+        }
+    });
+    let cost = tp_cost.inner_min(crafting_cost).inner_min(vendor_cost)?;
+
+    // give trading post precedence over crafting if costs are equal
+    let source = if tp_cost == Some(cost) {
+        Source::TradingPost
+    } else if crafting_cost == Some(cost) {
+        Source::Crafting
+    } else {
+        Source::Vendor
+    };
+
+    if source == Source::Crafting {
+        context.crafted.push(item_id);
+        context.crafting_steps += item_count / output_item_count;
+    } else {
+        for (purchase_id, purchase_quantity, purchase_source) in
+            context.purchases.drain(purchases_ptr..)
+        {
+            if purchase_source == Source::TradingPost {
+                tp_listings_map
+                    .get_mut(&purchase_id)
+                    .unwrap()
+                    .pending_buy_quantity -= purchase_quantity;
+            }
+        }
+        context.crafted.drain(crafted_ptr..);
+        context.crafting_steps = crafting_steps_before;
+    }
+
+    if source != Source::Crafting {
+        context.purchases.push((item_id, item_count, source));
+    }
+    if source == Source::TradingPost {
+        tp_listings_map
+            .get_mut(&item_id)
+            .unwrap()
+            .pending_buy_quantity += item_count;
+    }
+
+    Some(PreciseCraftingCost { cost, source })
+}
+
+#[derive(Debug, Copy, Clone, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum Source {
+    Crafting,
+    TradingPost,
+    Vendor,
+}
+
+pub fn calculate_crafting_profit(
+    item_id: u32,
+    recipes_map: &HashMap<u32, Recipe>,
+    known_recipes: &Option<HashSet<u32>>,
+    items_map: &HashMap<u32, api::Item>,
+    tp_listings_map: &HashMap<u32, api::ItemListings>,
+    mut purchased_ingredients: Option<&mut HashMap<(u32, Source), PurchasedIngredient>>,
+    opt: &config::CraftingOptions,
+) -> Option<ProfitableItem> {
+    let mut tp_listings_map: BTreeMap<u32, ItemListings> = tp_listings_map
+        .clone()
+        .into_iter()
+        .map(|(id, listings)| (id, ItemListings::from(listings)))
+        .collect();
+
+    let recipe = recipes_map.get(&item_id);
+    let output_item_count = recipe.map(|recipe| recipe.output_item_count).unwrap_or(1);
+
+    let mut listing_profit = Rational32::zero();
+    let mut total_crafting_cost = Rational32::zero();
+    let mut crafting_count = 0;
+    let mut total_crafting_steps = Rational32::zero();
+    let mut unknown_recipes = HashSet::new();
+
+    let mut min_sell = 0;
+    let max_sell = tp_listings_map
+        .get(&item_id)
+        .unwrap_or_else(|| panic!("Missing listings for item id: {}", item_id))
+        .buys
+        .last()
+        .map_or(0, |l| l.unit_price);
+    let mut breakeven = Rational32::zero();
+
+    // simulate crafting 1 item per loop iteration until it becomes unprofitable
+    loop {
+        if let Some(count) = opt.count {
+            if crafting_count + output_item_count > count {
+                break;
+            }
+        }
+
+        let mut context = PreciseCraftingCostContext {
+            purchases: vec![],
+            crafted: vec![],
+            crafting_steps: Rational32::zero(),
+        };
+
+        let crafting_cost = if let Some(PreciseCraftingCost {
+            source: Source::Crafting,
+            cost,
+        }) = calculate_precise_min_crafting_cost(
+            item_id,
+            output_item_count.into(),
+            recipes_map,
+            items_map,
+            &mut tp_listings_map,
+            &mut context,
+            opt,
+        ) {
+            cost
+        } else {
+            break;
+        };
+
+        let (buy_price, min_buy) = if let Some(price) = opt.value {
+            (Rational32::from(price), price)
+        } else if let Some(buy_price) = tp_listings_map
+            .get_mut(&item_id)
+            .unwrap_or_else(|| panic!("Missing listings for item id: {}", item_id))
+            .sell(output_item_count.into())
+        {
+            buy_price
+        } else {
+            break;
+        };
+
+        let profit = buy_price - crafting_cost;
+        if profit >= Rational32::from(opt.threshold.unwrap_or(0) as i32) {
+            listing_profit += profit;
+            total_crafting_cost += crafting_cost;
+            crafting_count += output_item_count;
+
+            min_sell = min_buy;
+            breakeven = crafting_cost / output_item_count;
+        } else {
+            break;
+        }
+
+        for item_id in &context.crafted {
+            let recipe = if let Some(recipe) = recipes_map.get(item_id) {
+                recipe
+            } else {
+                continue;
+            };
+            if let Some(id) = recipe.id.filter(|id| !unknown_recipes.contains(id)) {
+                match recipe.source {
+                    RecipeSource::Purchasable | RecipeSource::Achievement => {
+                        // If we have no known recipes, assume we know none
+                        if known_recipes
+                            .as_ref()
+                            .filter(|recipes| recipes.contains(&id))
+                            .is_none()
+                        {
+                            unknown_recipes.insert(id);
+                        }
+                    }
+                    // These aren't included in the API; assume you know them
+                    RecipeSource::Automatic | RecipeSource::Discoverable => {
+                        // TODO: instead, check if account has a char with the required crafting level
+                        // Would require a key with the characters scope. Still wouldn't detect
+                        // discoverable recipes, but would detect access to them
+                    }
+                }
+            }
+        }
+
+        for (purchase_id, count, purchase_source) in &context.purchases {
+            let (cost, min_sell, max_sell) = if let Source::TradingPost = *purchase_source {
+                let listing = tp_listings_map.get_mut(purchase_id).unwrap_or_else(|| {
+                    panic!(
+                        "Missing listings for ingredient {} of item id {}",
+                        purchase_id, item_id
+                    )
+                });
+                listing.pending_buy_quantity -= *count;
+                let (cost, min_sell, max_sell) = listing.buy(*count).unwrap_or_else(|| {
+                    panic!(
+                        "Expected to be able to buy {} of ingredient {} for item id {}",
+                        count, purchase_id, item_id
+                    )
+                });
+                (cost, min_sell, max_sell)
+            } else {
+                (Rational32::zero(), 0, 0)
+            };
+
+            if let Some(purchased_ingredients) = &mut purchased_ingredients {
+                let ingredient = purchased_ingredients
+                    .entry((*purchase_id, *purchase_source))
+                    .or_insert_with(|| PurchasedIngredient {
+                        count: Rational32::zero(),
+                        max_price: 0,
+                        min_price: 0,
+                        total_cost: Rational32::zero(),
+                    });
+                ingredient.count += count;
+                if ingredient.min_price.is_zero() {
+                    ingredient.min_price = min_sell;
+                }
+                ingredient.max_price = max_sell;
+                ingredient.total_cost += cost;
+            }
+        }
+        debug_assert!(tp_listings_map
+            .iter()
+            .all(|(_, listing)| listing.pending_buy_quantity.is_zero()));
+
+        total_crafting_steps += context.crafting_steps;
+    }
+
+    if crafting_count > 0 && listing_profit.is_positive() {
+        Some(ProfitableItem {
+            id: item_id,
+            crafting_cost: total_crafting_cost,
+            crafting_steps: total_crafting_steps,
+            profit: listing_profit,
+            count: crafting_count,
+            unknown_recipes,
+            max_sell: max_sell,
+            min_sell: min_sell,
+            breakeven: api::add_trading_post_sales_commission(breakeven),
+        })
+    } else {
+        None
+    }
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct PurchasedIngredient {
+    pub count: Rational32,
+    pub max_price: i32,
+    pub min_price: i32,
+    pub total_cost: Rational32,
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct ProfitableItem {
+    pub id: u32,
+    pub crafting_cost: Rational32,
+    pub crafting_steps: Rational32,
+    pub count: i32,
+    pub profit: Rational32,
+    pub unknown_recipes: HashSet<u32>, // id
+    pub max_sell: i32,
+    pub min_sell: i32,
+    pub breakeven: i32,
+}
+
+impl ProfitableItem {
+    pub fn profit_per_item(&self) -> Rational32 {
+        self.profit / Rational32::from(self.count)
+    }
+
+    pub fn profit_per_crafting_step(&self) -> Rational32 {
+        self.profit / self.crafting_steps
+    }
+
+    pub fn profit_on_cost(&self) -> Rational32 {
+        self.profit / self.crafting_cost
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct ItemListings {
+    pub id: u32,
+    pub buys: Vec<Listing>,
+    pub sells: Vec<Listing>,
+    pub pending_buy_quantity: Rational32,
+}
+
+#[derive(Clone, Debug)]
+pub struct Listing {
+    pub unit_price: i32,
+    pub quantity: Rational32,
+}
+
+impl ItemListings {
+    fn buy(&mut self, mut count: Rational32) -> Option<(Rational32, i32, i32)> {
+        let mut cost = Rational32::zero();
+        let mut min_sell = 0;
+        let mut max_sell = 0;
+
+        while count.is_positive() {
+            // sells are sorted in descending price
+            let remove = if let Some(listing) = self.sells.last_mut() {
+                listing.quantity -= Rational32::from(1);
+                count -= Rational32::from(1);
+                if min_sell == 0 {
+                    min_sell = listing.unit_price;
+                }
+                max_sell = listing.unit_price;
+                cost += listing.unit_price;
+                listing.quantity.is_zero()
+            } else {
+                return None;
+            };
+
+            if remove {
+                self.sells.pop();
+            }
+        }
+
+        Some((cost, min_sell, max_sell))
+    }
+
+    fn sell(&mut self, mut count: Rational32) -> Option<(Rational32, i32)> {
+        let mut revenue = Rational32::zero();
+        let mut min_buy = 0;
+
+        while count.is_positive() {
+            // buys are sorted in ascending price
+            let remove = if let Some(listing) = self.buys.last_mut() {
+                listing.quantity -= Rational32::from(1);
+                count -= Rational32::from(1);
+                min_buy = listing.unit_price;
+                revenue += listing.unit_price_minus_fees();
+                listing.quantity.is_zero()
+            } else {
+                return None;
+            };
+
+            if remove {
+                self.buys.pop();
+            }
+        }
+
+        Some((revenue, min_buy))
+    }
+
+    fn lowest_sell_offer(&self, mut quantity: Rational32) -> Option<Rational32> {
+        debug_assert!(!quantity.is_zero());
+
+        let mut cost = Rational32::zero();
+        let mut pending_buy_quantity = self.pending_buy_quantity;
+
+        for listing in self.sells.iter().rev() {
+            let mut remaining_listing_quantity = listing.quantity;
+            if pending_buy_quantity.is_positive() {
+                pending_buy_quantity -= remaining_listing_quantity;
+                remaining_listing_quantity = -pending_buy_quantity;
+            }
+
+            if remaining_listing_quantity.is_positive() {
+                if remaining_listing_quantity < quantity {
+                    quantity -= remaining_listing_quantity;
+                    cost += remaining_listing_quantity * listing.unit_price;
+                } else {
+                    cost += quantity * listing.unit_price;
+                    quantity = Rational32::zero();
+                }
+            }
+
+            if quantity.is_zero() {
+                break;
+            }
+        }
+
+        if quantity.is_positive() {
+            None
+        } else {
+            Some(cost)
+        }
+    }
+}
+
+impl From<api::ItemListings> for ItemListings {
+    fn from(v: api::ItemListings) -> Self {
+        ItemListings {
+            id: v.id,
+            buys: v
+                .buys
+                .into_iter()
+                .map(|listing| Listing {
+                    unit_price: listing.unit_price,
+                    quantity: listing.quantity.into(),
+                })
+                .collect(),
+            sells: v
+                .sells
+                .into_iter()
+                .map(|listing| Listing {
+                    unit_price: listing.unit_price,
+                    quantity: listing.quantity.into(),
+                })
+                .collect(),
+            pending_buy_quantity: Rational32::zero(),
+        }
+    }
+}
+
+impl Listing {
+    pub fn unit_price_minus_fees(&self) -> Rational32 {
+        api::subtract_trading_post_sales_commission(self.unit_price)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum RecipeSource {
+    Automatic,
+    Discoverable,
+    Purchasable,
+    Achievement,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Recipe {
+    pub id: Option<u32>,
+    pub output_item_id: u32,
+    pub output_item_count: i32,
+    pub disciplines: Vec<config::Discipline>,
+    pub ingredients: Vec<api::RecipeIngredient>,
+    source: RecipeSource,
+}
+
+impl From<api::Recipe> for Recipe {
+    fn from(recipe: api::Recipe) -> Self {
+        let source = if recipe.is_purchased() {
+            RecipeSource::Purchasable
+        } else if recipe.is_automatic() {
+            RecipeSource::Automatic
+        } else {
+            RecipeSource::Discoverable
+        };
+        Recipe {
+            id: Some(recipe.id),
+            output_item_id: recipe.output_item_id,
+            output_item_count: recipe.output_item_count,
+            disciplines: recipe.disciplines,
+            ingredients: recipe.ingredients,
+            source,
+        }
+    }
+}
+
+impl TryFrom<gw2efficiency::Recipe> for Recipe {
+    type Error = String;
+
+    fn try_from(recipe: gw2efficiency::Recipe) -> Result<Self, Self::Error> {
+        let output_item_count = if let Some(count) = recipe.output_item_count {
+            count
+        } else {
+            return Err(format!(
+                "Ignoring '{}'. Failed to parse 'output_item_count' as integer.",
+                recipe.name
+            ));
+        };
+        // Any disciplines _except_ Achievement can be counted as known
+        // While some regular discipline precursor recipes must be learned, the
+        // outputs appear to be account bound anyway, so won't be on TP.
+        // There are some useful Scribe WvW BPs in the data, so ignoring all
+        // normal discipline recipes would catch those too.
+        let source = if recipe
+            .disciplines
+            .contains(&config::Discipline::Achievement)
+        {
+            RecipeSource::Achievement
+        } else {
+            RecipeSource::Automatic
+        };
+        Ok(Recipe {
+            id: None,
+            output_item_id: recipe.output_item_id,
+            output_item_count,
+            disciplines: recipe.disciplines,
+            ingredients: recipe.ingredients,
+            source,
+        })
+    }
+}
+
+impl Recipe {
+    // see https://wiki.guildwars2.com/wiki/Category:Time_gated_recipes
+    // for a list of time gated recipes
+    // I've left Charged Quartz Crystals off the list, since they can
+    // drop from containers.
+    pub fn is_timegated(&self) -> bool {
+        self.output_item_id == 46740         // Spool of Silk Weaving Thread
+            || self.output_item_id == 46742  // Lump of Mithrillium
+            || self.output_item_id == 46744  // Glob of Elder Spirit Residue
+            || self.output_item_id == 46745  // Spool of Thick Elonian Cord
+            || self.output_item_id == 66913  // Clay Pot
+            || self.output_item_id == 66917  // Plate of Meaty Plant Food
+            || self.output_item_id == 66923  // Plate of Piquant Plan Food
+            || self.output_item_id == 67015  // Heat Stone
+            || self.output_item_id == 67377  // Vial of Maize Balm
+            || self.output_item_id == 79726  // Dragon Hatchling Doll Eye
+            || self.output_item_id == 79763  // Gossamer Stuffing
+            || self.output_item_id == 79790  // Dragon Hatchling Doll Hide
+            || self.output_item_id == 79795  // Dragon Hatchling Doll Adornments
+            || self.output_item_id == 79817  // Dragon Hatchling Doll Frame
+            || self.output_item_id == 43772 // Charged Quartz Crystal
+    }
+
+    #[cfg(test)]
+    pub(crate) fn mock<const A: usize>(
+        id: u32,
+        output_item_id: u32,
+        output_item_count: i32,
+        disciplines: [config::Discipline; A],
+        ingredients: &[api::RecipeIngredient],
+        source: RecipeSource,
+    ) -> Self {
+        Recipe {
+            id: Some(id),
+            output_item_id,
+            output_item_count,
+            disciplines: disciplines.to_vec(),
+            ingredients: ingredients.to_vec(),
+            source,
+        }
+    }
+}
+
+// integer division rounding up
+// see: https://stackoverflow.com/questions/2745074/fast-ceiling-of-an-integer-division-in-c-c
+fn div_i32_ceil(x: i32, y: i32) -> i32 {
+    (x + y - 1) / y
+}
+
+trait OptionInnerMin<T> {
+    fn inner_min(self, other: Option<T>) -> Option<T>;
+}
+
+impl<T> OptionInnerMin<T> for Option<T>
+where
+    T: Ord + Copy,
+{
+    fn inner_min(self, other: Option<T>) -> Option<T> {
+        match (self, other) {
+            (Some(a), Some(b)) => Some(a.min(b)),
+            (None, _) => other,
+            (_, None) => self,
+        }
+    }
+}
