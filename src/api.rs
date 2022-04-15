@@ -75,6 +75,86 @@ pub struct RecipeIngredient {
     pub count: i32,
 }
 
+// types for /skills
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Skill {
+    pub id: u32,
+    pub name: String,
+    // TODO: the rest?
+}
+
+#[derive(Debug, Serialize)]
+#[serde(transparent)]
+pub struct ApiSkill(Skill);
+
+impl<'de> Deserialize<'de> for ApiSkill {
+    fn deserialize<D>(d: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Debug, Deserialize)]
+        struct SkillDeser {
+            pub id: u32,
+            pub name: String,
+        }
+
+        let skill = SkillDeser::deserialize(d)?;
+        Ok(ApiSkill(Skill {
+            id: skill.id,
+            name: skill.name,
+        }))
+    }
+}
+
+impl From<ApiSkill> for Skill {
+    fn from(skill: ApiSkill) -> Self {
+        Skill {
+            id: skill.0.id,
+            name: skill.0.name,
+        }
+    }
+}
+
+// types for /traits
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Trait {
+    pub id: u32,
+    pub name: String,
+    // TODO: the rest?
+}
+
+#[derive(Debug, Serialize)]
+#[serde(transparent)]
+pub struct ApiTrait(Trait);
+
+impl<'de> Deserialize<'de> for ApiTrait {
+    fn deserialize<D>(d: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Debug, Deserialize)]
+        struct TraitDeser {
+            pub id: u32,
+            pub name: String,
+        }
+
+        let r#trait = TraitDeser::deserialize(d)?;
+        Ok(ApiTrait(Trait {
+            id: r#trait.id,
+            name: r#trait.name,
+        }))
+    }
+}
+
+impl From<ApiTrait> for Trait {
+    fn from(r#trait: ApiTrait) -> Self {
+        Trait {
+            id: r#trait.0.id,
+            name: r#trait.0.name,
+        }
+    }
+}
+
 // types for /items
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Item {

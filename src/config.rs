@@ -26,8 +26,10 @@ pub struct Config {
 
     pub cache_dir: PathBuf,
     pub items_file: PathBuf,
+    pub skills_file: PathBuf,
+    pub traits_file: PathBuf,
 
-    pub item_name: Option<String>,
+    pub search_term: Option<String>,
 }
 
 lazy_static! {
@@ -40,12 +42,19 @@ impl Config {
 
         let opt = Opt::from_args();
 
-		config.skill = opt.skill;
-		config.r#trait = opt.r#trait;
-		config.item = opt.item;
+        if ! opt.reset_data {
+            config.skill = opt.skill;
+            config.r#trait = opt.r#trait;
+            config.item = opt.item;
+
+            // default (but only when not resetting data)
+            if ! (config.skill || config.r#trait || config.item) {
+                config.item = true;
+            }
+        }
 
         config.lang = opt.lang;
-        config.item_name = opt.item_name;
+        config.search_term = opt.search_term;
 
         let file: ConfigFile = match get_file_config(&opt.config_file) {
             Ok(config) => config,
@@ -79,9 +88,18 @@ impl Config {
 
         let lang_suffix =
             Language::code(&config.lang).map_or_else(|| "".to_string(), |c| format!("_{}", c));
+
         let mut items_path = data_dir.clone();
         items_path.push(format!("items{}.bin", lang_suffix));
         config.items_file = items_path;
+
+        let mut skills_path = data_dir.clone();
+        skills_path.push(format!("skills{}.bin", lang_suffix));
+        config.skills_file = skills_path;
+
+        let mut traits_path = data_dir.clone();
+        traits_path.push(format!("traits{}.bin", lang_suffix));
+        config.traits_file = traits_path;
 
         if opt.reset_data {
             match remove_data_file(&config.items_file) {
@@ -92,24 +110,22 @@ impl Config {
                 ),
                 _ => (),
             };
-/*
-            match remove_data_file(&config.api_recipes_file) {
+            match remove_data_file(&config.skills_file) {
                 Err(e) => println!(
                     "Failed to remove file {}: {}",
-                    &config.api_recipes_file.display(),
+                    &config.skills_file.display(),
                     e
                 ),
                 _ => (),
             };
-            match remove_data_file(&config.custom_recipes_file) {
+            match remove_data_file(&config.traits_file) {
                 Err(e) => println!(
                     "Failed to remove file {}: {}",
-                    &config.custom_recipes_file.display(),
+                    &config.traits_file.display(),
                     e
                 ),
                 _ => (),
             };
-*/
         }
 
         config
@@ -138,12 +154,12 @@ struct Opt {
     #[structopt(short = "t", long)]
     r#trait: bool,
 
-    /// Search for item
+    /// Search for item (default)
     #[structopt(short = "i", long)]
     item: bool,
 
-    /// Search for item name
-    item_name: Option<String>,
+    /// Search for this
+    search_term: Option<String>,
 
     /// Download content from the GW2 API, replacing any previously cached kontent
     #[structopt(long)]
@@ -186,7 +202,6 @@ static CONFIG_FILE_HELP: Lazy<String> = Lazy::new(|| {
     format!(
         r#"Read config options from this file. Supported options:
 
-    api_key = "<key-with-unlocks-scope>"
     lang = "<lang>"
 
 The default file location is '{}'."#,
