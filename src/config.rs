@@ -14,30 +14,17 @@ use toml;
 use lazy_static::lazy_static;
 
 pub const CACHE_PREFIX: &str = "cache_";
-// pub const PRODUCT_PREFIX: &str = "gw2-arbitrage";
 pub const PRODUCT_PREFIX: &str = "gw2search";
-
-#[derive(Debug, Default)]
-pub struct CraftingOptions {
-    pub include_timegated: bool,
-    pub include_ascended: bool,
-    pub count: Option<i32>,
-    pub threshold: Option<u32>,
-    pub value: Option<i32>,
-}
 
 #[derive(Default)]
 pub struct Config {
-    pub crafting: CraftingOptions,
+	pub skill: bool,
+	pub r#trait: bool,
+	pub item: bool,
 
-    pub output_csv: Option<PathBuf>,
-    pub filter_disciplines: Option<Vec<Discipline>>,
     pub lang: Option<Language>,
-    pub api_key: Option<String>,
 
     pub cache_dir: PathBuf,
-    pub api_recipes_file: PathBuf,
-    pub custom_recipes_file: PathBuf,
     pub items_file: PathBuf,
 
     pub item_name: Option<String>,
@@ -53,27 +40,19 @@ impl Config {
 
         let opt = Opt::from_args();
 
-        config.crafting.include_timegated = opt.include_timegated;
-        config.crafting.include_ascended = opt.include_ascended;
-        config.crafting.count = opt.count;
-        config.crafting.threshold = opt.threshold;
-        config.crafting.value = opt.value;
+		config.skill = opt.skill;
+		config.r#trait = opt.r#trait;
+		config.item = opt.item;
 
-        config.output_csv = opt.output_csv;
         config.lang = opt.lang;
         config.item_name = opt.item_name;
 
-        config.filter_disciplines = opt.filter_disciplines;
-
         let file: ConfigFile = match get_file_config(&opt.config_file) {
             Ok(config) => config,
-            Err(e) => {
-                println!("Error opening config file: {}", e);
+            Err(_) => {
                 ConfigFile::default()
             }
         };
-
-        config.api_key = file.api_key;
 
         if let None = config.lang {
             if let Some(code) = file.lang {
@@ -98,14 +77,6 @@ impl Config {
         let data_dir = data_dir(&opt.data_dir).expect("Failed to identify data dir");
         ensure_dir(&data_dir).expect("Failed to create data dir");
 
-        let mut api_recipes_path = data_dir.clone();
-        api_recipes_path.push("recipes.bin");
-        config.api_recipes_file = api_recipes_path;
-
-        let mut custom_recipes_path = data_dir.clone();
-        custom_recipes_path.push("custom.bin");
-        config.custom_recipes_file = custom_recipes_path;
-
         let lang_suffix =
             Language::code(&config.lang).map_or_else(|| "".to_string(), |c| format!("_{}", c));
         let mut items_path = data_dir.clone();
@@ -121,6 +92,7 @@ impl Config {
                 ),
                 _ => (),
             };
+/*
             match remove_data_file(&config.api_recipes_file) {
                 Err(e) => println!(
                     "Failed to remove file {}: {}",
@@ -137,6 +109,7 @@ impl Config {
                 ),
                 _ => (),
             };
+*/
         }
 
         config
@@ -152,44 +125,27 @@ fn get_file_config(file: &Option<PathBuf>) -> Result<ConfigFile, Box<dyn std::er
 
 #[derive(Debug, Default, Deserialize)]
 struct ConfigFile {
-    // API key requires scope unlocks
-    api_key: Option<String>,
     lang: Option<String>,
 }
 
 #[derive(StructOpt, Debug)]
 struct Opt {
-    /// Include timegated recipes such as Deldrimor Steel Ingot
+    /// Search for skill
+    #[structopt(short = "s", long)]
+    skill: bool,
+
+    /// Search for trait
     #[structopt(short = "t", long)]
-    include_timegated: bool,
+    r#trait: bool,
 
-    /// Include recipes that require Piles of Bloodstone Dust, Dragonite Ore or Empyreal Fragments
-    #[structopt(short = "a", long)]
-    include_ascended: bool,
-
-    /// Output the full list of profitable recipes to this CSV file
-    #[structopt(short, long, parse(from_os_str))]
-    output_csv: Option<PathBuf>,
+    /// Search for item
+    #[structopt(short = "i", long)]
+    item: bool,
 
     /// Search for item name
     item_name: Option<String>,
 
-    /// Limit the maximum number of items produced for a recipe
-    #[structopt(short, long)]
-    count: Option<i32>,
-
-    /// Calculate profit based on a fixed value instead of from buy orders
-    #[structopt(long)]
-    value: Option<i32>,
-
-    /// Threshold - min profit per item in copper
-    #[structopt(long)]
-    threshold: Option<u32>,
-
-    #[structopt(short = "d", long = "disciplines", use_delimiter = true, help = &DISCIPLINES_HELP, parse(try_from_str = get_discipline))]
-    filter_disciplines: Option<Vec<Discipline>>,
-
-    /// Download recipes and items from the GW2 API, replacing any previously cached recipes and items
+    /// Download content from the GW2 API, replacing any previously cached kontent
     #[structopt(long)]
     reset_data: bool,
 
@@ -219,7 +175,7 @@ If provided, the parent directory of the cache directory must already exist. Def
 
 static DATA_DIR_HELP: Lazy<String> = Lazy::new(|| {
     format!(
-        r#"Save cached recipes and items to this directory
+        r#"Save cached items and other content to this directory
 
 If provided, the parent directory of the cache directory must already exist. Defaults to '{}'."#,
         data_dir(&None).unwrap().display()
@@ -235,15 +191,6 @@ static CONFIG_FILE_HELP: Lazy<String> = Lazy::new(|| {
 
 The default file location is '{}'."#,
         config_file(&None).unwrap().display()
-    )
-});
-
-static DISCIPLINES_HELP: Lazy<String> = Lazy::new(|| {
-    format!(
-        r#"Only show items craftable by this discipline or comma-separated list of disciplines (e.g. -d=Weaponsmith,Armorsmith)
-
-valid values: {}"#,
-        Discipline::VARIANTS.join(", ")
     )
 });
 
@@ -314,19 +261,6 @@ pub enum Discipline {
     Charge,
     Achievement,
     Growing,
-}
-
-fn get_discipline<Discipline: FromStr + VariantNames>(
-    discipline: &str,
-) -> Result<Discipline, Box<dyn std::error::Error>> {
-    Discipline::from_str(discipline).map_err(|_| {
-        format!(
-            "Invalid discipline: {} (valid values are {})",
-            discipline,
-            Discipline::VARIANTS.join(", ")
-        )
-        .into()
-    })
 }
 
 fn ensure_dir(dir: &PathBuf) -> Result<&PathBuf, Box<dyn std::error::Error>> {

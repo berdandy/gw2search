@@ -81,7 +81,7 @@ pub struct Item {
     pub id: u32,
     pub name: String,
     #[serde(rename = "type")]
-    item_type: ItemType,
+    pub item_type: ItemType,
     rarity: ItemRarity,
     level: i32,
     vendor_value: i32,
