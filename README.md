@@ -19,7 +19,7 @@ USAGE:
 FLAGS:
     -h, --help          Prints help information
     -i, --item          Search for item (default)
-        --reset-data    Download content from the GW2 API, replacing any previously cached kontent
+        --reset-data    Download content from the GW2 API, replacing any previously cached content
     -s, --skill         Search for skill
     -t, --trait         Search for trait
     -V, --version       Prints version information
