@@ -43,3 +43,20 @@ OPTIONS:
 ARGS:
     <search-term>    Search for this
 ```
+
+## Output:
+
+```
+$ gw2search -s shroud
+Results found: 10
+10574 : Death Shroud
+10585 : End Death Shroud
+30792 : Reaper's Shroud
+30961 : Exit Reaper's Shroud
+44663 : Desert Shroud
+54870 : Sandstorm Shroud
+62540 : Exit Harbinger Shroud
+62567 : Harbinger Shroud
+63155 : Enter Shadow Shroud
+```
+63251 : Exit Shadow Shroud
