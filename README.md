@@ -60,3 +60,7 @@ Results found: 10
 63155 : Enter Shadow Shroud
 63251 : Exit Shadow Shroud
 ```
+
+---
+
+This project contains MIT-licensed code from gw2-arbitrage. The MIT license file was not provided, but [it may be found here](https://github.com/t-mw/gw2-arbitrage).
