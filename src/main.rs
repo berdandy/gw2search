@@ -5,7 +5,7 @@ mod request;
 mod tests;
 
 use iced::{
-    scrollable, text_input, pick_list, Align, Column, Element,
+    scrollable, text_input, pick_list, Align, Color, Column, Element,
 	PickList, Row, Rule, Sandbox, Scrollable, Settings, Text, TextInput,
 };
 
@@ -120,7 +120,7 @@ impl Sandbox for Gw2Search {
 	fn view(&mut self) -> Element<Self::Message> {
 
 		let results = self.results.iter().fold(
-            Column::new().spacing(10).push(Text::new("Results:")),
+            Column::new().spacing(10).push(Text::new("")),
             |column: Column<Message>, result| {
                 column.push(
 					Text::new(result)
@@ -129,8 +129,8 @@ impl Sandbox for Gw2Search {
         );
 
 		Column::new()
-            .spacing(20)
-			.padding(20)
+            .spacing(8)
+			.padding(8)
 			.align_items(Align::Center)
             .push(Text::new("gw2search").size(32))
             .push(Rule::horizontal(20))
@@ -152,6 +152,13 @@ impl Sandbox for Gw2Search {
 				)
 			)
 			.push(Text::new("input search term and hit [ENTER] to search"))
+			.push(Text::new("WARNING: BE PATIENT. The first search of each mode can take up to several minutes to cache")
+				.size(14)
+				.color(Color::from_rgb8(0xDD, 0x22, 0x22))
+			)
+			.push(Text::new("There is no feedback for the download unless running from console/cmd").size(12))
+			.push(Text::new("To reset cache, delete files in %APPDATA%\\Roaming\\gw2search").size(12))
+			.push(Text::new("If you find this useful, tips welcomed in-game at berdandy.1968 :)").size(16))
 			.push(
 				Scrollable::new(&mut self.scroll)
 					.padding(40)
