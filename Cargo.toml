@@ -28,3 +28,4 @@ toml = "0.4"
 phf = { version = "0.9", features = ["macros"] }
 lazy_static = "1.4"
 strum = { version = "0.23", features = ["derive"] }
+iced = "0.3"

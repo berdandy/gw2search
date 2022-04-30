@@ -4,6 +4,11 @@ mod request;
 #[cfg(test)]
 mod tests;
 
+use iced::{
+    button, scrollable, text_input, Align, Button, Column, Container, Element, Length,
+    ProgressBar, Radio, Row, Rule, Sandbox, Scrollable, Settings, Space, Text, TextInput,
+};
+
 use config::CONFIG;
 
 macro_rules! debug {
@@ -21,9 +26,94 @@ macro_rules! debug {
     };
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+pub fn main() -> iced::Result {
+    Gw2Search::run(Settings::default())
+}
 
+struct Gw2Search {
+    scroll: scrollable::State,
+    input: text_input::State,
+    search_term: String,
+	results: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+enum Message {
+	Search,
+	SearchTermChanged(String),
+	// SearchComplete(Vec<String>),
+	// Scrolled(usize, f32),
+}
+
+impl Sandbox for Gw2Search {
+    type Message = Message;
+
+	fn new() -> Self {
+		Gw2Search {
+			scroll: scrollable::State::new(),
+			input: text_input::State::new(),
+			search_term: String::new(), 
+			results: Vec::new(),
+		}
+	}
+
+	fn title(&self) -> String {
+		String::from("Gw2Search")
+	}
+
+	fn update(&mut self, message: Message)
+	{
+		match message {
+			Message::SearchTermChanged(term) => {
+				self.search_term = term;
+			}
+			Message::Search => {
+				println!("TODO: SEARCH {}", self.search_term);
+				match search_api(self.search_term.clone()) {
+					Ok(()) => println!("done"),
+					Err(error) => panic!("Problem with search {:?}", error)
+				}
+			}
+		}
+	}
+
+	fn view(&mut self) -> Element<Self::Message> {
+
+		let results_col = Column::new()
+			.spacing(20)
+			.padding(20)
+			.align_items(Align::Start);
+			//.push(self.results.iter().map(|&result| Text::new(result)));
+
+		for result in &self.results {
+			results_col.push(Text::new(result));
+		}
+
+		Column::new()
+            .spacing(20)
+			.padding(20)
+			.align_items(Align::Center)
+            .push(Text::new("Gw2Search"))
+            .push(Rule::horizontal(20))
+            .push(
+				TextInput::new(
+					&mut self.input,
+					"Search Term",
+					&self.search_term,
+					Message::SearchTermChanged
+				).on_submit(Message::Search)
+			)
+			.push(
+				Scrollable::new(&mut self.scroll)
+					.padding(40)
+					.push(results_col)
+			)
+			.into()
+		}
+}
+
+#[tokio::main]
+async fn search_api(search_term: String) -> Result<(), Box<dyn std::error::Error>> {
 	if CONFIG.skill {
 		debug!("Loading skills");
 		let skills: Vec<api::Skill> = request::get_data(&CONFIG.skills_file, || async {
@@ -41,23 +131,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 			CONFIG.skills_file.display()
 		);
 
-		if let Some(skill_name) = &CONFIG.search_term {
-			let results: Vec<_> = skills
-				.iter()
-				.filter_map(|skill| match &skill.name.to_ascii_lowercase().contains(&skill_name.to_ascii_lowercase()) {
-					true => Some(skill),
-					false => None
-				})
-				.collect();
+		let skill_name = &search_term;
+		let results: Vec<_> = skills
+			.iter()
+			.filter_map(|skill| match &skill.name.to_ascii_lowercase().contains(&skill_name.to_ascii_lowercase()) {
+				true => Some(skill),
+				false => None
+			})
+			.collect();
 
-			println!("Results found: {}", results.len());
+		println!("Results found: {}", results.len());
 
-			for result in results {
-				println!("{} : {}",
-					result.id,
-					result.name
-				);
-			}
+		for result in results {
+			println!("{} : {}",
+				result.id,
+				result.name
+			);
 		}
 
 	} else if CONFIG.r#trait {
@@ -78,23 +167,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 			CONFIG.traits_file.display()
 		);
 
-		if let Some(trait_name) = &CONFIG.search_term {
-			let results: Vec<_> = traits
-				.iter()
-				.filter_map(|r#trait| match &r#trait.name.to_ascii_lowercase().contains(&trait_name.to_ascii_lowercase()) {
-					true => Some(r#trait),
-					false => None
-				})
-				.collect();
+		let trait_name = &search_term;
+		let results: Vec<_> = traits
+			.iter()
+			.filter_map(|r#trait| match &r#trait.name.to_ascii_lowercase().contains(&trait_name.to_ascii_lowercase()) {
+				true => Some(r#trait),
+				false => None
+			})
+			.collect();
 
-			println!("Results found: {}", results.len());
+		println!("Results found: {}", results.len());
 
-			for result in results {
-				println!("{} : {}",
-					result.id,
-					result.name
-				);
-			}
+		for result in results {
+			println!("{} : {}",
+				result.id,
+				result.name
+			);
 		}
 
 	} else if CONFIG.item {
@@ -114,24 +202,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 			CONFIG.items_file.display()
 		);
 
-		if let Some(item_name) = &CONFIG.search_term {
-			let results: Vec<_> = items
-				.iter()
-				.filter_map(|item| match &item.name.to_ascii_lowercase().contains(&item_name.to_ascii_lowercase()) {
-					true => Some(item),
-					false => None
-				})
-				.collect();
+		let item_name = &search_term;
+		let results: Vec<_> = items
+			.iter()
+			.filter_map(|item| match &item.name.to_ascii_lowercase().contains(&item_name.to_ascii_lowercase()) {
+				true => Some(item),
+				false => None
+			})
+			.collect();
 
-			println!("Results found: {}", results.len());
+		println!("Results found: {}", results.len());
 
-			for result in results {
-				println!("{} : {} [{:?}]",
-					result.id,
-					result.name,
-					result.item_type
-				);
-			}
+		for result in results {
+			println!("{} : {} [{:?}]",
+				result.id,
+				result.name,
+				result.item_type
+			);
 		}
 	}
 
