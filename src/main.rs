@@ -10,6 +10,7 @@ use iced::{
 };
 
 use config::CONFIG;
+use std::env;
 
 macro_rules! debug {
     ($($e:expr),+) => {
@@ -27,7 +28,29 @@ macro_rules! debug {
 }
 
 pub fn main() -> iced::Result {
-    Gw2Search::run(Settings::default())
+    let argc = env::args().count();
+    if argc > 1 {
+        println!("Running in command line mode. Run with no options to open gui");
+        let mode : SearchMode = match &CONFIG {
+            cfg if cfg.skill => SearchMode::Skill,
+            cfg if cfg.item => SearchMode::Item,
+            _ => SearchMode::Trait,
+        };
+        let term = match &CONFIG.search_term {
+            Some(term) => term.clone(),
+            _ => "".to_string(),
+        };
+        let results = match search_api(mode, term) {
+            Ok(results) => results,
+            Err(e) => panic!("error searching with commandline search: {}", e),
+        };
+        for result in results {
+            println!("{}", result);
+        }
+        Ok(())
+    } else {
+        Gw2Search::run(Settings::default())
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
