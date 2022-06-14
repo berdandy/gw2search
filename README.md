@@ -1,6 +1,10 @@
 # gw2search
 
-A commandline tool to search things in the gw2 api by name and shows their IDs
+A tool to search things in the gw2 api by name and shows their IDs
+
+Run with no arguments to open a gui tool.
+
+Run with argument usage shown below for command-line "expert" mode
 
 ## Supports:
 
@@ -11,7 +15,7 @@ A commandline tool to search things in the gw2 api by name and shows their IDs
 ## Usage:
 
 ```
-gw2search 0.2.0
+gw2search 0.4.1
 
 USAGE:
     gw2search [FLAGS] [OPTIONS] [search-term]
