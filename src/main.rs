@@ -34,18 +34,22 @@ pub fn main() -> iced::Result {
         let mode : SearchMode = match &CONFIG {
             cfg if cfg.skill => SearchMode::Skill,
             cfg if cfg.item => SearchMode::Item,
-            _ => SearchMode::Trait,
+            cfg if cfg.r#trait => SearchMode::Trait,
+            _ => SearchMode::Skip,
         };
-        let term = match &CONFIG.search_term {
-            Some(term) => term.clone(),
-            _ => "".to_string(),
-        };
-        let results = match search_api(mode, term) {
-            Ok(results) => results,
-            Err(e) => panic!("error searching with commandline search: {}", e),
-        };
-        for result in results {
-            println!("{}", result);
+
+        if mode != SearchMode::Skip {
+            let term = match &CONFIG.search_term {
+                Some(term) => term.clone(),
+                _ => "".to_string(),
+            };
+            let results = match search_api(mode, term) {
+                Ok(results) => results,
+                Err(e) => panic!("error searching with commandline search: {}", e),
+            };
+            for result in results {
+                println!("{}", result);
+            }
         }
         Ok(())
     } else {
@@ -58,6 +62,7 @@ pub enum SearchMode {
 	Item,
 	Skill,
 	Trait,
+    Skip,
 }
 impl Default for SearchMode {
     fn default() -> Self { SearchMode::Item }
@@ -78,6 +83,7 @@ impl std::fmt::Display for SearchMode {
                 SearchMode::Item => "Item",
                 SearchMode::Skill => "Skill",
                 SearchMode::Trait => "Trait",
+                SearchMode::Skip => "---",
             }
         )
     }
@@ -194,6 +200,9 @@ impl Sandbox for Gw2Search {
 #[tokio::main]
 async fn search_api(search_mode: SearchMode, search_term: String) -> Result<Vec<String>, Box<dyn std::error::Error>> {
 	match search_mode {
+        SearchMode::Skip => {
+            Ok(vec![])
+        },
 		SearchMode::Skill => {
 			debug!("Loading skills");
 			let skills: Vec<api::Skill> = request::get_data(&CONFIG.skills_file, || async {
