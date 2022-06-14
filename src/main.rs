@@ -5,7 +5,7 @@ mod request;
 mod tests;
 
 use iced::{
-    scrollable, text_input, pick_list, Align, Color, Column, Element,
+    scrollable, text_input, pick_list, Alignment, Color, Column, Element,
 	PickList, Row, Rule, Sandbox, Scrollable, Settings, Text, TextInput,
 };
 
@@ -160,7 +160,7 @@ impl Sandbox for Gw2Search {
 		Column::new()
             .spacing(8)
 			.padding(8)
-			.align_items(Align::Center)
+			.align_items(Alignment::Center)
             .push(Text::new("gw2search").size(32))
             .push(Rule::horizontal(20))
             .push(
