@@ -41,7 +41,7 @@ pub fn main() -> iced::Result {
         if mode != SearchMode::Skip {
             let term = match &CONFIG.search_term {
                 Some(term) => term.clone(),
-                _ => "".to_string(),
+                _ => String::from(""),
             };
             let results = match search_api(mode, term) {
                 Ok(results) => results,
