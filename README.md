@@ -14,9 +14,11 @@ Run with no arguments (or double click) to open a gui tool. There is no installe
 
 Note that some errors are not visible in gui mode, and command-line mode must be used.
 
-- ![Sample Screenshot of Item Search](img/sample_item.png?raw=true "Sample Item Search")
-- ![Sample Screenshot of Skill Search](img/sample_skill.png?raw=true "Sample Skill Search")
-- ![Sample Screenshot of Trait Search](img/sample_trait.png?raw=true "Sample Trait Search")
+![Sample Screenshot of Item Search](img/sample_item.png?raw=true "Sample Item Search")
+
+![Sample Screenshot of Skill Search](img/sample_skill.png?raw=true "Sample Skill Search")
+
+![Sample Screenshot of Trait Search](img/sample_trait.png?raw=true "Sample Trait Search")
 
 ## Command-line Expert Mode
 
