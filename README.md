@@ -2,20 +2,30 @@
 
 A tool to search things in the gw2 api by name and shows their IDs
 
-Run with no arguments to open a gui tool.
-
-Run with argument usage shown below for command-line "expert" mode
-
 ## Supports:
 
 - Items
 - Skills
 - Traits
 
-## Usage:
+## GUI Mode
+
+Run with no arguments (or double click) to open a gui tool. There is no installer.
+
+Note that some errors are not visible in gui mode, and command-line mode must be used.
+
+- [Sample Screenshot of Item Search](img/sample_item.png)
+- [Sample Screenshot of Skill Search](img/sample_skill.png)
+- [Sample Screenshot of Trait Search](img/sample_trait.png)
+
+## Command-line Expert Mode
+
+Run with argument usage shown below for command-line "expert" mode using cmd.exe (or linux/mac shells)
+
+### Usage:
 
 ```
-gw2search 0.4.1
+gw2search 0.4.2
 
 USAGE:
     gw2search [FLAGS] [OPTIONS] [search-term]
