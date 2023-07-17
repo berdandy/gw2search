@@ -18,6 +18,7 @@ pub const PRODUCT_PREFIX: &str = "gw2search";
 
 #[derive(Default)]
 pub struct Config {
+	pub any: bool,
 	pub skill: bool,
 	pub r#trait: bool,
 	pub item: bool,
@@ -43,12 +44,13 @@ impl Config {
         let opt = Opt::from_args();
 
         if ! opt.reset_data {
+            config.any = opt.any;
             config.skill = opt.skill;
             config.r#trait = opt.r#trait;
             config.item = opt.item;
 
             // default (but only when not resetting data)
-            if ! (config.skill || config.r#trait || config.item) {
+            if ! (config.any || config.skill || config.r#trait || config.item) {
                 config.item = true;
             }
         }
@@ -146,6 +148,10 @@ struct ConfigFile {
 
 #[derive(StructOpt, Debug)]
 struct Opt {
+    /// Search for skill, trait or item
+    #[structopt(short = "a", long)]
+    any: bool,
+
     /// Search for skill
     #[structopt(short = "s", long)]
     skill: bool,

@@ -32,6 +32,7 @@ pub fn main() -> iced::Result {
     if argc > 1 {
         println!("Running in command line mode. Run with no options to open gui");
         let mode : SearchMode = match &CONFIG {
+            cfg if cfg.any => SearchMode::Any,
             cfg if cfg.skill => SearchMode::Skill,
             cfg if cfg.item => SearchMode::Item,
             cfg if cfg.r#trait => SearchMode::Trait,
@@ -59,6 +60,7 @@ pub fn main() -> iced::Result {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SearchMode {
+    Any,
 	Item,
 	Skill,
 	Trait,
@@ -80,6 +82,7 @@ impl std::fmt::Display for SearchMode {
             f,
             "{}",
             match self {
+                SearchMode::Any => "Any",
                 SearchMode::Item => "Item",
                 SearchMode::Skill => "Skill",
                 SearchMode::Trait => "Trait",
@@ -290,6 +293,92 @@ async fn search_api(search_mode: SearchMode, search_term: String) -> Result<Vec<
 				})
 				.map(|result| format!("{}: {}", result.id, result.name))
 				.collect::<Vec<String>>();
+
+			return Ok(results);
+		}
+		SearchMode::Any => {
+			debug!("Loading skills");
+			let skills: Vec<api::Skill> = request::get_data(&CONFIG.skills_file, || async {
+				let api_skills: Vec<api::ApiSkill> =
+					request::request_paginated("skills", &CONFIG.lang).await?;
+				Ok(api_skills
+					.into_iter()
+					.map(|api_skill| api::Skill::from(api_skill))
+					.collect())
+			})
+			.await?;
+			debug!(
+				"Loaded {} skills stored at '{}'",
+				skills.len(),
+				CONFIG.skills_file.display()
+			);
+
+			let skill_name = &search_term;
+			let mut results: Vec<_> = skills
+				.iter()
+				.filter_map(|skill| match &skill.name.to_ascii_lowercase().contains(&skill_name.to_ascii_lowercase()) {
+					true => Some(skill),
+					false => None
+				})
+				.map(|result| format!("{}: {}", result.id, result.name))
+				.collect::<Vec<String>>();
+
+			debug!("Loading traits");
+
+			let traits: Vec<api::Trait> = request::get_data(&CONFIG.traits_file, || async {
+				let api_traits: Vec<api::ApiTrait> =
+					request::request_paginated("traits", &CONFIG.lang).await?;
+				Ok(api_traits
+					.into_iter()
+					.map(|api_trait| api::Trait::from(api_trait))
+					.collect())
+			})
+			.await?;
+			debug!(
+				"Loaded {} traits stored at '{}'",
+				traits.len(),
+				CONFIG.traits_file.display()
+			);
+
+			let trait_name = &search_term;
+			let mut found_traits: Vec<_> = traits
+				.iter()
+				.filter_map(|r#trait| match &r#trait.name.to_ascii_lowercase().contains(&trait_name.to_ascii_lowercase()) {
+					true => Some(r#trait),
+					false => None
+				})
+				.map(|result| format!("{}: {}", result.id, result.name))
+				.collect::<Vec<String>>();
+
+			results.append(&mut found_traits);
+
+			debug!("Loading items");
+			let items: Vec<api::Item> = request::get_data(&CONFIG.items_file, || async {
+				let api_items: Vec<api::ApiItem> =
+					request::request_paginated("items", &CONFIG.lang).await?;
+				Ok(api_items
+					.into_iter()
+					.map(|api_item| api::Item::from(api_item))
+					.collect())
+			})
+			.await?;
+			debug!(
+				"Loaded {} items stored at '{}'",
+				items.len(),
+				CONFIG.items_file.display()
+			);
+
+			let item_name = &search_term;
+			let mut found_items: Vec<_> = items
+				.iter()
+				.filter_map(|item| match &item.name.to_ascii_lowercase().contains(&item_name.to_ascii_lowercase()) {
+					true => Some(item),
+					false => None
+				})
+				.map(|result| format!("{}: {}", result.id, result.name))
+				.collect::<Vec<String>>();
+
+			results.append(&mut found_items);
 
 			return Ok(results);
 		}
