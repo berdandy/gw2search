@@ -69,8 +69,10 @@ pub enum SearchMode {
 impl Default for SearchMode {
     fn default() -> Self { SearchMode::Item }
 }
+// for drop down
 impl SearchMode {
-    const ALL: [SearchMode; 3] = [
+    const ALL: [SearchMode; 4] = [
+		SearchMode::Any,
 		SearchMode::Item,
 		SearchMode::Skill,
 		SearchMode::Trait,
@@ -320,7 +322,7 @@ async fn search_api(search_mode: SearchMode, search_term: String) -> Result<Vec<
 					true => Some(skill),
 					false => None
 				})
-				.map(|result| format!("{}: {}", result.id, result.name))
+				.map(|result| format!("{}: {} [SKILL]", result.id, result.name))
 				.collect::<Vec<String>>();
 
 			debug!("Loading traits");
@@ -347,7 +349,7 @@ async fn search_api(search_mode: SearchMode, search_term: String) -> Result<Vec<
 					true => Some(r#trait),
 					false => None
 				})
-				.map(|result| format!("{}: {}", result.id, result.name))
+				.map(|result| format!("{}: {} [TRAIT]", result.id, result.name))
 				.collect::<Vec<String>>();
 
 			results.append(&mut found_traits);
@@ -375,7 +377,7 @@ async fn search_api(search_mode: SearchMode, search_term: String) -> Result<Vec<
 					true => Some(item),
 					false => None
 				})
-				.map(|result| format!("{}: {}", result.id, result.name))
+				.map(|result| format!("{}: {} [ITEM]", result.id, result.name))
 				.collect::<Vec<String>>();
 
 			results.append(&mut found_items);
