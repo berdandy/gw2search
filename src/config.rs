@@ -23,6 +23,8 @@ pub struct Config {
 	pub r#trait: bool,
 	pub item: bool,
 
+    pub reverse: bool,
+
     pub lang: Option<Language>,
 
     pub cache_dir: PathBuf,
@@ -48,6 +50,7 @@ impl Config {
             config.skill = opt.skill;
             config.r#trait = opt.r#trait;
             config.item = opt.item;
+            config.reverse = opt.reverse;
 
             // default (but only when not resetting data)
             if ! (config.any || config.skill || config.r#trait || config.item) {
@@ -163,6 +166,10 @@ struct Opt {
     /// Search for item (default)
     #[structopt(short = "i", long)]
     item: bool,
+
+    /// Search for id instead of name
+    #[structopt(short = "r", long)]
+    reverse: bool,
 
     /// Search for this
     search_term: Option<String>,

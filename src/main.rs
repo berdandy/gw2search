@@ -6,7 +6,7 @@ mod tests;
 
 use iced::{
     scrollable, text_input, pick_list, Alignment, Color, Column, Element,
-	PickList, Row, Rule, Sandbox, Scrollable, Settings, Text, TextInput,
+	PickList, Row, Rule, Sandbox, Scrollable, Settings, Text, TextInput, Checkbox
 };
 
 use config::CONFIG;
@@ -44,7 +44,7 @@ pub fn main() -> iced::Result {
                 Some(term) => term.clone(),
                 _ => String::from(""),
             };
-            let results = match search_api(mode, term) {
+            let results = match search_api(mode, term, CONFIG.reverse) {
                 Ok(results) => results,
                 Err(e) => panic!("error searching with commandline search: {}", e),
             };
@@ -101,6 +101,7 @@ struct Gw2Search {
 	pick_list: pick_list::State<SearchMode>,
 	search_mode: SearchMode,
     search_term: String,
+    reverse: bool,
 	results: Vec<String>,
 }
 
@@ -109,6 +110,7 @@ enum Message {
 	Search,
 	SearchTermChanged(String),
 	SearchModeSelected(SearchMode),
+	ReverseSearchChanged(bool),
 }
 
 impl Sandbox for Gw2Search {
@@ -132,7 +134,7 @@ impl Sandbox for Gw2Search {
 				self.search_mode = search_mode;
 
 				if ! self.search_term.is_empty() {
-					match search_api(self.search_mode, self.search_term.clone()) {
+					match search_api(self.search_mode, self.search_term.clone(), self.reverse) {
 						Ok(results) => {
 							self.results = results;
 						}
@@ -140,8 +142,11 @@ impl Sandbox for Gw2Search {
 					}
 				}
 			}
+			Message::ReverseSearchChanged(reverse_search) => {
+				self.reverse = reverse_search;
+			}
 			Message::Search => {
-				match search_api(self.search_mode, self.search_term.clone()) {
+				match search_api(self.search_mode, self.search_term.clone(), self.reverse) {
 					Ok(results) => {
 						self.results = results;
 					}
@@ -184,6 +189,12 @@ impl Sandbox for Gw2Search {
 						Some(self.search_mode),
 						Message::SearchModeSelected)
 				)
+				.push(
+					Checkbox::new(
+						self.reverse,
+						"Reverse",
+						Message::ReverseSearchChanged)
+				)
 			)
 			.push(Text::new("input search term and hit [ENTER] to search"))
 			.push(Text::new("WARNING: BE PATIENT. The first search of each mode can take up to several minutes to cache")
@@ -203,7 +214,7 @@ impl Sandbox for Gw2Search {
 }
 
 #[tokio::main]
-async fn search_api(search_mode: SearchMode, search_term: String) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bool) -> Result<Vec<String>, Box<dyn std::error::Error>> {
 	match search_mode {
         SearchMode::Skip => {
             Ok(vec![])
@@ -225,12 +236,17 @@ async fn search_api(search_mode: SearchMode, search_term: String) -> Result<Vec<
 				CONFIG.skills_file.display()
 			);
 
-			let skill_name = &search_term;
 			let results: Vec<_> = skills
 				.iter()
-				.filter_map(|skill| match &skill.name.to_ascii_lowercase().contains(&skill_name.to_ascii_lowercase()) {
-					true => Some(skill),
-					false => None
+				.filter_map(|skill| match in_reverse {
+					false => match &skill.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
+						true => Some(skill),
+						false => None
+					},
+					true => match &skill.id.to_string() == &search_term.to_ascii_lowercase() {
+						true => Some(skill),
+						false => None
+					}
 				})
 				.map(|result| format!("{}: {}", result.id, result.name))
 				.collect::<Vec<String>>();
@@ -256,12 +272,17 @@ async fn search_api(search_mode: SearchMode, search_term: String) -> Result<Vec<
 				CONFIG.traits_file.display()
 			);
 
-			let trait_name = &search_term;
 			let results: Vec<_> = traits
 				.iter()
-				.filter_map(|r#trait| match &r#trait.name.to_ascii_lowercase().contains(&trait_name.to_ascii_lowercase()) {
-					true => Some(r#trait),
-					false => None
+				.filter_map(|r#trait| match in_reverse {
+						false => match &r#trait.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
+							true => Some(r#trait),
+							false => None
+						},
+						true => match &r#trait.id.to_string() == &search_term.to_ascii_lowercase() {
+							true => Some(r#trait),
+							false => None
+						}
 				})
 				.map(|result| format!("{}: {}", result.id, result.name))
 				.collect::<Vec<String>>();
@@ -286,12 +307,17 @@ async fn search_api(search_mode: SearchMode, search_term: String) -> Result<Vec<
 				CONFIG.items_file.display()
 			);
 
-			let item_name = &search_term;
 			let results: Vec<_> = items
 				.iter()
-				.filter_map(|item| match &item.name.to_ascii_lowercase().contains(&item_name.to_ascii_lowercase()) {
-					true => Some(item),
-					false => None
+				.filter_map(|item| match in_reverse {
+						false => match &item.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
+							true => Some(item),
+							false => None
+						},
+						true => match &item.id.to_string() == &search_term.to_ascii_lowercase() {
+							true => Some(item),
+							false => None
+						}
 				})
 				.map(|result| format!("{}: {}", result.id, result.name))
 				.collect::<Vec<String>>();
@@ -315,13 +341,18 @@ async fn search_api(search_mode: SearchMode, search_term: String) -> Result<Vec<
 				CONFIG.skills_file.display()
 			);
 
-			let skill_name = &search_term;
 			let mut results: Vec<_> = skills
 				.iter()
-				.filter_map(|skill| match &skill.name.to_ascii_lowercase().contains(&skill_name.to_ascii_lowercase()) {
-					true => Some(skill),
-					false => None
-				})
+				.filter_map(|skill| match in_reverse {
+					false => match &skill.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
+						true => Some(skill),
+						false => None
+					},
+					true => match &skill.id.to_string() == &search_term.to_ascii_lowercase() {
+						true => Some(skill),
+						false => None
+					}
+				})	
 				.map(|result| format!("{}: {} [SKILL]", result.id, result.name))
 				.collect::<Vec<String>>();
 
@@ -342,12 +373,17 @@ async fn search_api(search_mode: SearchMode, search_term: String) -> Result<Vec<
 				CONFIG.traits_file.display()
 			);
 
-			let trait_name = &search_term;
 			let mut found_traits: Vec<_> = traits
 				.iter()
-				.filter_map(|r#trait| match &r#trait.name.to_ascii_lowercase().contains(&trait_name.to_ascii_lowercase()) {
-					true => Some(r#trait),
-					false => None
+				.filter_map(|r#trait| match in_reverse {
+						false => match &r#trait.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
+							true => Some(r#trait),
+							false => None
+						},
+						true => match &r#trait.id.to_string() == &search_term.to_ascii_lowercase() {
+							true => Some(r#trait),
+							false => None
+						}
 				})
 				.map(|result| format!("{}: {} [TRAIT]", result.id, result.name))
 				.collect::<Vec<String>>();
@@ -370,12 +406,17 @@ async fn search_api(search_mode: SearchMode, search_term: String) -> Result<Vec<
 				CONFIG.items_file.display()
 			);
 
-			let item_name = &search_term;
 			let mut found_items: Vec<_> = items
 				.iter()
-				.filter_map(|item| match &item.name.to_ascii_lowercase().contains(&item_name.to_ascii_lowercase()) {
-					true => Some(item),
-					false => None
+				.filter_map(|item| match in_reverse {
+						false => match &item.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
+							true => Some(item),
+							false => None
+						},
+						true => match &item.id.to_string() == &search_term.to_ascii_lowercase() {
+							true => Some(item),
+							false => None
+						}
 				})
 				.map(|result| format!("{}: {} [ITEM]", result.id, result.name))
 				.collect::<Vec<String>>();
