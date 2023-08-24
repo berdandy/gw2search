@@ -260,6 +260,7 @@ pub enum ItemType {
     Trophy,
     UpgradeComponent,
     Weapon,
+	Mwcc, // obfuscated relic type
 }
 
 #[derive(Debug, Serialize, Deserialize, Display)]
