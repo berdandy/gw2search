@@ -260,7 +260,12 @@ pub enum ItemType {
     Trophy,
     UpgradeComponent,
     Weapon,
-	Mwcc, // obfuscated relic type
+    FishingRod,
+    FishingBait,
+    FishingLure,
+    SensoryArray,
+    ServiceChip,
+    Relic,
 }
 
 #[derive(Debug, Serialize, Deserialize, Display)]
