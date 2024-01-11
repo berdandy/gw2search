@@ -1,7 +1,4 @@
 #![allow(dead_code)]
-#![allow(unused_variables)]
-
-use crate::api::ItemListings;
 
 use bincode;
 use bincode::{deserialize_from, serialize_into};
@@ -12,7 +9,6 @@ use futures::{stream, StreamExt};
 use serde_json;
 
 use std::collections::hash_map::DefaultHasher;
-use std::collections::HashSet;
 use std::fs::File;
 use std::future::Future;
 use std::hash::{Hash, Hasher};
@@ -25,23 +21,6 @@ const PARALLEL_REQUESTS: usize = 10;
 const MAX_PAGE_SIZE: i32 = 200; // https://wiki.guildwars2.com/wiki/API:2#Paging
 const MAX_ITEM_ID_LENGTH: i32 = 200; // error returned for greater than this amount
 
-pub async fn fetch_item_listings(
-    item_ids: &[u32],
-    cache_dir: Option<&PathBuf>,
-) -> Result<Vec<ItemListings>, Box<dyn std::error::Error>> {
-    let mut tp_listings: Vec<ItemListings> =
-        request_item_ids("commerce/listings", item_ids, cache_dir).await?;
-
-    for listings in &mut tp_listings {
-        // by default sells are listed in ascending and buys in descending price.
-        // reverse lists to allow best offers to be popped instead of spliced from front.
-        listings.buys.reverse();
-        listings.sells.reverse();
-    }
-
-    Ok(tp_listings)
-}
-
 pub async fn get_data<T, Fut>(
     data_path: impl AsRef<Path>,
     getter: impl FnOnce() -> Fut,
@@ -52,8 +31,8 @@ where
     Fut: Future<Output = Result<Vec<T>, Box<dyn std::error::Error>>>,
 {
     if let Ok(file) = File::open(&data_path) {
-        let stream = DeflateDecoder::new(file);
-        deserialize_from(stream).map_err(|e| {
+        let bitstream = DeflateDecoder::new(file);
+        deserialize_from(bitstream).map_err(|e| {
             format!(
                 "Failed to deserialize existing data at '{}' ({}). \
                  Try using the --reset-data flag to replace the data files.",
@@ -66,8 +45,8 @@ where
         let items = getter().await?;
 
         let file = File::create(data_path)?;
-        let stream = DeflateEncoder::new(file, Compression::default());
-        serialize_into(stream, &items)?;
+        let bitstream = DeflateEncoder::new(file, Compression::default());
+        serialize_into(bitstream, &items)?;
 
         Ok(items)
     }
@@ -151,49 +130,6 @@ where
     }
     let de = &mut serde_json::Deserializer::from_str(&txt);
     serde_path_to_error::deserialize(de).map_err(|e| e.into())
-}
-
-async fn request_item_ids<T>(
-    url_path: &str,
-    item_ids: &[u32],
-    cache_dir: Option<&PathBuf>,
-) -> Result<Vec<T>, Box<dyn std::error::Error>>
-where
-    T: serde::Serialize,
-    T: serde::de::DeserializeOwned,
-{
-    let mut result = vec![];
-
-    for batch in item_ids.chunks(MAX_ITEM_ID_LENGTH as usize) {
-        let item_ids_str: Vec<String> = batch.iter().map(|id| id.to_string()).collect();
-
-        let url = format!(
-            "https://api.guildwars2.com/v2/{}?ids={}",
-            url_path,
-            item_ids_str.join(",")
-        );
-        if let Some(cache_dir) = cache_dir {
-            result.extend(
-                cached_fetch::<Vec<T>>(&url, None, cache_dir)
-                    .await?
-                    .into_iter(),
-            );
-        } else {
-            result.extend(fetch::<Vec<T>>(&url, None).await?.into_iter());
-        }
-    }
-
-    Ok(result)
-}
-
-pub async fn fetch_account_recipes(
-    key: &str,
-    cache_dir: &PathBuf,
-) -> Result<HashSet<u32>, Box<dyn std::error::Error>> {
-    let base = "https://api.guildwars2.com/v2/account/recipes?access_token=";
-    let url = format!("{}{}", base, key);
-    let display = format!("{}{}", base, "<api-key>");
-    Ok(cached_fetch(&url, Some(&display), cache_dir).await?)
 }
 
 async fn cached_fetch<T>(

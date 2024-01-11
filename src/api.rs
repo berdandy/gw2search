@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use num_rational::Rational32;
 use serde::{de, Deserialize, Deserializer, Serialize};
 use std::fmt;
 
@@ -10,70 +9,6 @@ use strum::Display;
 
 use crate::config;
 use config::CONFIG;
-
-const TRADING_POST_SALES_COMMISSION: i32 = 15; // %
-
-pub fn subtract_trading_post_sales_commission(v: i32) -> Rational32 {
-    Rational32::new(100 - TRADING_POST_SALES_COMMISSION, 100) * v
-}
-pub fn add_trading_post_sales_commission(v: Rational32) -> i32 {
-    (v / Rational32::new(100 - TRADING_POST_SALES_COMMISSION, 100)).to_integer()
-}
-
-// types for /commerce/prices
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Price {
-    pub id: u32,
-    pub buys: PriceInfo,
-    pub sells: PriceInfo,
-}
-
-impl Price {
-    pub fn effective_buy_price(&self) -> i32 {
-        (self.buys.unit_price as f32 * (1.0 - TRADING_POST_SALES_COMMISSION as f32 / 100.0)).floor()
-            as i32
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct PriceInfo {
-    pub unit_price: i32,
-    pub quantity: i32,
-}
-
-// types for /recipes
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Recipe {
-    pub id: u32,
-    pub output_item_id: u32,
-    pub output_item_count: i32,
-    time_to_craft_ms: i32,
-    pub disciplines: Vec<config::Discipline>,
-    min_rating: i32,
-    flags: Vec<RecipeFlags>,
-    pub ingredients: Vec<RecipeIngredient>,
-}
-
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub enum RecipeFlags {
-    AutoLearned,
-    LearnedFromItem,
-}
-
-impl Recipe {
-    pub fn is_purchased(&self) -> bool {
-        self.flags.contains(&RecipeFlags::LearnedFromItem)
-    }
-    pub fn is_automatic(&self) -> bool {
-        self.flags.contains(&RecipeFlags::AutoLearned)
-    }
-}
-
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
-pub struct RecipeIngredient {
-    pub item_id: u32,
-    pub count: i32,
-}
 
 // types for /skills
 #[derive(Debug, Serialize, Deserialize)]
@@ -491,19 +426,4 @@ impl fmt::Display for Item {
 struct ItemUpgrade {
     upgrade: String,
     item_id: i32,
-}
-
-// types for /commerce/listings
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ItemListings {
-    pub id: u32,
-    pub buys: Vec<Listing>,
-    pub sells: Vec<Listing>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Listing {
-    pub listings: i32,
-    pub unit_price: i32,
-    pub quantity: i32,
 }

@@ -5,7 +5,7 @@ mod request;
 mod tests;
 
 use iced::{
-    scrollable, text_input, pick_list, Alignment, Color, Column, Element,
+    button, scrollable, text_input, pick_list, Alignment, Button, Column, Element, Color,
 	PickList, Row, Rule, Sandbox, Scrollable, Settings, Text, TextInput, Checkbox
 };
 
@@ -103,6 +103,8 @@ struct Gw2Search {
     search_term: String,
     reverse: bool,
 	results: Vec<String>,
+	search_button: button::State,
+	delete_button: button::State,
 }
 
 #[derive(Debug, Clone)]
@@ -111,6 +113,7 @@ enum Message {
 	SearchTermChanged(String),
 	SearchModeSelected(SearchMode),
 	ReverseSearchChanged(bool),
+	DeleteData,
 }
 
 impl Sandbox for Gw2Search {
@@ -153,6 +156,18 @@ impl Sandbox for Gw2Search {
 					Err(error) => panic!("Problem with search {:?}", error)
 				}
 			}
+			Message::DeleteData => {
+				for file in [&CONFIG.items_file, &CONFIG.skills_file, &CONFIG.traits_file] {
+					match config::remove_data_file(file) {
+						Err(e) => println!(
+							"Failed to remove file {}: {}",
+							file.display(),
+							e
+						),
+						_ => (),
+					};
+				}
+			}
 		}
 	}
 
@@ -172,7 +187,7 @@ impl Sandbox for Gw2Search {
 			.padding(8)
 			.align_items(Alignment::Center)
             .push(Text::new("gw2search").size(32))
-            .push(Rule::horizontal(20))
+            .push(Rule::horizontal(30))
             .push(
 				Row::new()
 				.push(TextInput::new(
@@ -181,6 +196,9 @@ impl Sandbox for Gw2Search {
 						&self.search_term,
 						Message::SearchTermChanged
 					).on_submit(Message::Search)
+				)
+				.push(Button::new(&mut self.search_button, Text::new("Search"))
+					.on_press(Message::Search)
 				)
 				.push(
 					PickList::new(
@@ -196,17 +214,18 @@ impl Sandbox for Gw2Search {
 						Message::ReverseSearchChanged)
 				)
 			)
-			.push(Text::new("input search term and hit [ENTER] to search"))
-			.push(Text::new("WARNING: BE PATIENT. The first search of each mode can take up to several minutes to cache")
-				.size(14)
+			.push(Button::new(&mut self.delete_button, Text::new("Delete Data Files"))
+				.on_press(Message::DeleteData)
+			)
+			.push(Text::new("Input search term."))
+			.push(Text::new("Delete Data Files to clear permanently cached results")
+				.size(12)
 				.color(Color::from_rgb8(0xDD, 0x22, 0x22))
 			)
-			.push(Text::new("There is no feedback for the download unless running from console/cmd").size(12))
-			.push(Text::new("To reset cache, delete files in %APPDATA%\\Roaming\\gw2search").size(12))
-			.push(Text::new("If you find this useful, tips welcomed in-game at berdandy.1968 :)").size(16))
+			.push(Text::new("made by berdandy.1968").size(12))
 			.push(
 				Scrollable::new(&mut self.scroll)
-					.padding(40)
+					.padding(50)
 					.push(results)
 			)
 			.into()

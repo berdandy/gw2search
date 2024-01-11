@@ -107,30 +107,16 @@ impl Config {
         config.traits_file = traits_path;
 
         if opt.reset_data {
-            match remove_data_file(&config.items_file) {
-                Err(e) => println!(
-                    "Failed to remove file {}: {}",
-                    &config.items_file.display(),
-                    e
-                ),
-                _ => (),
-            };
-            match remove_data_file(&config.skills_file) {
-                Err(e) => println!(
-                    "Failed to remove file {}: {}",
-                    &config.skills_file.display(),
-                    e
-                ),
-                _ => (),
-            };
-            match remove_data_file(&config.traits_file) {
-                Err(e) => println!(
-                    "Failed to remove file {}: {}",
-                    &config.traits_file.display(),
-                    e
-                ),
-                _ => (),
-            };
+            for file in [&config.items_file, &config.skills_file, &config.traits_file] {
+                match remove_data_file(file) {
+                    Err(e) => println!(
+                        "Failed to remove file {}: {}",
+                        file.display(),
+                        e
+                    ),
+                    _ => (),
+                };
+            }
         }
 
         config
@@ -232,10 +218,6 @@ pub enum Language {
     German,
     #[strum(serialize = "fr")]
     French,
-    // If you read this and can help test the TP code and extract strings from the Chinese version,
-    // and would like to see this work in Chinese, please open an issue.
-    // #[strum(serialize="zh")]
-    // Chinese, // No lang client, and TP might have different data source anyway
 }
 impl Language {
     pub fn code(lang: &Option<Language>) -> Option<&str> {
@@ -245,7 +227,6 @@ impl Language {
                 Language::Spanish => Some("es"),
                 Language::German => Some("de"),
                 Language::French => Some("fr"),
-                //Language::Chinese => Some("zh"),
             }
         } else {
             None
@@ -353,7 +334,7 @@ fn data_dir(dir: &Option<PathBuf>) -> Result<PathBuf, Box<dyn std::error::Error>
         .ok_or_else(|| "Failed to access current working directory".into())
 }
 
-fn remove_data_file(file: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+pub fn remove_data_file(file: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     if file.exists() {
         println!("Removing existing data file at '{}'", file.display());
         std::fs::remove_file(&file)
