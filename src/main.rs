@@ -11,6 +11,8 @@ use iced::{
 
 use config::CONFIG;
 use std::env;
+use std::io;
+use std::io::Write;
 
 macro_rules! debug {
     ($($e:expr),+) => {
@@ -54,7 +56,14 @@ pub fn main() -> iced::Result {
 				false => "\n",
 				true => ",",
 			};
-			println!("{}", results.join(sep));
+	
+			if CONFIG.quiet {
+				// no trailing newline
+				print!("{}", results.join(sep));
+				io::stdout().flush().unwrap();
+			} else {
+				println!("{}", results.join(sep));
+			}
         }
         Ok(())
     } else {
