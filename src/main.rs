@@ -30,7 +30,9 @@ macro_rules! debug {
 pub fn main() -> iced::Result {
     let argc = env::args().count();
     if argc > 1 {
-        println!("Running in command line mode. Run with no options to open gui");
+		if ! CONFIG.quiet {
+			eprintln!("Running in command line mode. Run with no options to open gui");
+		}
         let mode : SearchMode = match &CONFIG {
             cfg if cfg.any => SearchMode::Any,
             cfg if cfg.skill => SearchMode::Skill,
@@ -48,9 +50,11 @@ pub fn main() -> iced::Result {
                 Ok(results) => results,
                 Err(e) => panic!("error searching with commandline search: {}", e),
             };
-            for result in results {
-                println!("{}", result);
-            }
+			let sep = match CONFIG.quiet {
+				false => "\n",
+				true => ",",
+			};
+			println!("{}", results.join(sep));
         }
         Ok(())
     } else {
@@ -267,7 +271,10 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 						false => None
 					}
 				})
-				.map(|result| format!("{}: {}", result.id, result.name))
+				.map(|result| match CONFIG.quiet {
+						false => format!("{}: {}", result.id, result.name),
+						true => format!("{}", result.id)
+				})
 				.collect::<Vec<String>>();
 
 			return Ok(results);
@@ -303,7 +310,10 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 							false => None
 						}
 				})
-				.map(|result| format!("{}: {}", result.id, result.name))
+				.map(|result| match CONFIG.quiet {
+						false => format!("{}: {}", result.id, result.name),
+						true => format!("{}", result.id)
+				})
 				.collect::<Vec<String>>();
 
 			return Ok(results);
@@ -338,7 +348,10 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 							false => None
 						}
 				})
-				.map(|result| format!("{}: {}", result.id, result.name))
+				.map(|result| match CONFIG.quiet {
+						false => format!("{}: {}", result.id, result.name),
+						true => format!("{}", result.id)
+				})
 				.collect::<Vec<String>>();
 
 			return Ok(results);

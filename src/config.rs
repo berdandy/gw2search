@@ -23,6 +23,8 @@ pub struct Config {
 	pub r#trait: bool,
 	pub item: bool,
 
+	pub quiet: bool,
+
     pub reverse: bool,
 
     pub lang: Option<Language>,
@@ -51,6 +53,7 @@ impl Config {
             config.r#trait = opt.r#trait;
             config.item = opt.item;
             config.reverse = opt.reverse;
+            config.quiet = opt.quiet;
 
             // default (but only when not resetting data)
             if ! (config.any || config.skill || config.r#trait || config.item) {
@@ -156,6 +159,10 @@ struct Opt {
     /// Search for id instead of name
     #[structopt(short = "r", long)]
     reverse: bool,
+
+	/// Only print id number results upon match
+	#[structopt(short = "q", long)]
+	quiet: bool,
 
     /// Search for this
     search_term: Option<String>,
