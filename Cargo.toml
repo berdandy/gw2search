@@ -4,6 +4,14 @@ version = "0.7.2"
 description = "Searches for ids in the gw2 api. Searches items, skills and traits."
 edition = "2021"
 authors = ["Andy Berdan <andy@berdan.ca>"]
+repository = "https://github.com/berdandy/gw2search"
+publish = false
+
+[package.metadata.wix]
+upgrade-guid = "BB788C03-44C7-4632-9D06-50CD34D6556A"
+path-guid = "8D37F87E-015A-46C1-AFC5-AC71E2F7BDB8"
+license = false
+eula = false
 
 [dependencies]
 bincode = "1.3.3"
@@ -27,3 +35,23 @@ phf = { version = "0.10.1", features = ["macros"] }
 lazy_static = "1.4.0"
 strum = { version = "0.24.1", features = ["derive"] }
 iced = "0.4.2"
+
+# The profile that 'cargo dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
+
+# Config for 'cargo dist'
+[workspace.metadata.dist]
+# The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
+cargo-dist-version = "0.11.1"
+# CI backends to support
+ci = ["github"]
+# The installers to generate for each app
+installers = ["shell", "homebrew", "msi"]
+# Target platforms to build apps for (Rust target-triple syntax)
+targets = ["x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"]
+# Publish jobs to run in CI
+pr-run-mode = "plan"
+# Whether to consider the binaries in a package for distribution (defaults true)
+dist = true

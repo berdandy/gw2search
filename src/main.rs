@@ -32,9 +32,6 @@ macro_rules! debug {
 pub fn main() -> iced::Result {
     let argc = env::args().count();
     if argc > 1 {
-		if ! CONFIG.quiet {
-			eprintln!("Running in command line mode. Run with no options to open gui");
-		}
         let mode : SearchMode = match &CONFIG {
             cfg if cfg.any => SearchMode::Any,
             cfg if cfg.skill => SearchMode::Skill,
