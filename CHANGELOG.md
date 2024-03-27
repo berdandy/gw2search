@@ -1,3 +1,7 @@
+# Version 0.7.3 - no-search empty string
+
+- If a blank search term is entered, a search is not performed. Data file download still occurs, however, making this useful for a pre-cache with `gw2search -a`
+
 # Version 0.7.2 - quiet ui
 
 - Added -q option to display only the id number of results

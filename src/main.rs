@@ -265,6 +265,10 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 				CONFIG.skills_file.display()
 			);
 
+			if search_term.is_empty() {
+				return Ok(vec![]);
+			}
+
 			let results: Vec<_> = skills
 				.iter()
 				.filter_map(|skill| match in_reverse {
@@ -304,6 +308,10 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 				CONFIG.traits_file.display()
 			);
 
+			if search_term.is_empty() {
+				return Ok(vec![]);
+			}
+
 			let results: Vec<_> = traits
 				.iter()
 				.filter_map(|r#trait| match in_reverse {
@@ -342,6 +350,10 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 				CONFIG.items_file.display()
 			);
 
+			if search_term.is_empty() {
+				return Ok(vec![]);
+			}
+
 			let results: Vec<_> = items
 				.iter()
 				.filter_map(|item| match in_reverse {
@@ -379,23 +391,7 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 				CONFIG.skills_file.display()
 			);
 
-			let mut results: Vec<_> = skills
-				.iter()
-				.filter_map(|skill| match in_reverse {
-					false => match &skill.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
-						true => Some(skill),
-						false => None
-					},
-					true => match &skill.id.to_string() == &search_term.to_ascii_lowercase() {
-						true => Some(skill),
-						false => None
-					}
-				})	
-				.map(|result| format!("{}: {} [SKILL]", result.id, result.name))
-				.collect::<Vec<String>>();
-
 			debug!("Loading traits");
-
 			let traits: Vec<api::Trait> = request::get_data(&CONFIG.traits_file, || async {
 				let api_traits: Vec<api::ApiTrait> =
 					request::request_paginated("traits", &CONFIG.lang).await?;
@@ -410,23 +406,6 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 				traits.len(),
 				CONFIG.traits_file.display()
 			);
-
-			let mut found_traits: Vec<_> = traits
-				.iter()
-				.filter_map(|r#trait| match in_reverse {
-						false => match &r#trait.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
-							true => Some(r#trait),
-							false => None
-						},
-						true => match &r#trait.id.to_string() == &search_term.to_ascii_lowercase() {
-							true => Some(r#trait),
-							false => None
-						}
-				})
-				.map(|result| format!("{}: {} [TRAIT]", result.id, result.name))
-				.collect::<Vec<String>>();
-
-			results.append(&mut found_traits);
 
 			debug!("Loading items");
 			let items: Vec<api::Item> = request::get_data(&CONFIG.items_file, || async {
@@ -444,24 +423,54 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 				CONFIG.items_file.display()
 			);
 
-			let mut found_items: Vec<_> = items
+			// ------------------------------------------------------------
+
+			if search_term.is_empty() {
+				return Ok(vec![]);
+			}
+
+			Ok(skills
 				.iter()
-				.filter_map(|item| match in_reverse {
-						false => match &item.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
-							true => Some(item),
-							false => None
-						},
-						true => match &item.id.to_string() == &search_term.to_ascii_lowercase() {
-							true => Some(item),
-							false => None
-						}
-				})
-				.map(|result| format!("{}: {} [ITEM]", result.id, result.name))
-				.collect::<Vec<String>>();
-
-			results.append(&mut found_items);
-
-			return Ok(results);
+				.filter_map(|skill| match in_reverse {
+					false => match &skill.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
+						true => Some(skill),
+						false => None
+					},
+					true => match &skill.id.to_string() == &search_term.to_ascii_lowercase() {
+						true => Some(skill),
+						false => None
+					}
+				})	
+				.map(|result| format!("{}: {} [SKILL]", result.id, result.name))
+				.chain(traits
+					.iter()
+					.filter_map(|r#trait| match in_reverse {
+							false => match &r#trait.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
+								true => Some(r#trait),
+								false => None
+							},
+							true => match &r#trait.id.to_string() == &search_term.to_ascii_lowercase() {
+								true => Some(r#trait),
+								false => None
+							}
+					})
+					.map(|result| format!("{}: {} [TRAIT]", result.id, result.name))
+					.chain(items
+						.iter()
+						.filter_map(|item| match in_reverse {
+								false => match &item.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
+									true => Some(item),
+									false => None
+								},
+								true => match &item.id.to_string() == &search_term.to_ascii_lowercase() {
+									true => Some(item),
+									false => None
+								}
+						})
+						.map(|result| format!("{}: {} [ITEM]", result.id, result.name))
+					)
+				)
+			.collect::<Vec<String>>())
 		}
 	}
 }
