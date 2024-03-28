@@ -1,7 +1,7 @@
 [package]
 name = "gw2search"
-version = "0.7.3"
-description = "Searches for ids in the gw2 api. Searches items, skills and traits."
+version = "0.7.4"
+description = "Searches in the gw2 api. Searches items, skills and traits."
 edition = "2021"
 authors = ["Andy Berdan <andy@berdan.ca>"]
 repository = "https://github.com/berdandy/gw2search"

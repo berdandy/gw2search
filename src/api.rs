@@ -10,12 +10,34 @@ use strum::Display;
 use crate::config;
 use config::CONFIG;
 
+pub trait ResultRender {
+    fn pretty(&self) -> String;
+    fn id_only(&self) -> String;
+    fn csv(&self) -> String; // id,name
+}
+
 // types for /skills
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Skill {
     pub id: u32,
     pub name: String,
     // TODO: the rest?
+}
+
+impl ResultRender for Skill {
+    fn pretty(&self) -> String  { format!("{}: {}", self.id, self.name) }
+    fn id_only(&self) -> String { format!("{}", self.id) }
+    fn csv(&self) -> String    { format!("{},{}", self.id, self.name) }
+}
+
+pub fn result_render(result: &impl ResultRender) -> String {
+    match CONFIG.quiet {
+        true => result.id_only(),
+        false => match CONFIG.csv {
+            true => result.csv(),
+            false => result.pretty()
+        }
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -56,6 +78,12 @@ pub struct Trait {
     pub id: u32,
     pub name: String,
     // TODO: the rest?
+}
+
+impl ResultRender for Trait {
+    fn pretty(&self) -> String  { format!("{}: {}", self.id, self.name) }
+    fn id_only(&self) -> String { format!("{}", self.id) }
+    fn csv(&self) -> String    { format!("{},{}", self.id, self.name) }
 }
 
 #[derive(Debug, Serialize)]
@@ -105,6 +133,12 @@ pub struct Item {
     upgrades_into: Option<Vec<ItemUpgrade>>,
     upgrades_from: Option<Vec<ItemUpgrade>>,
     details: Option<ItemDetails>,
+}
+
+impl ResultRender for Item {
+    fn pretty(&self) -> String  { format!("{}: {}", self.id, self.name) }
+    fn id_only(&self) -> String { format!("{}", self.id) }
+    fn csv(&self) -> String    { format!("{},{}", self.id, self.name) }
 }
 
 #[derive(Debug, Serialize)]

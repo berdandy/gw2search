@@ -14,6 +14,8 @@ use std::env;
 use std::io;
 use std::io::Write;
 
+use crate::api::result_render;
+
 macro_rules! debug {
     ($($e:expr),+) => {
         {
@@ -58,6 +60,8 @@ pub fn main() -> iced::Result {
 				// no trailing newline
 				print!("{}", results.join(sep));
 				io::stdout().flush().unwrap();
+			} else if CONFIG.csv {
+				println!("id,name\n{}", results.join(sep));
 			} else {
 				println!("{}", results.join(sep));
 			}
@@ -265,7 +269,7 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 				CONFIG.skills_file.display()
 			);
 
-			if search_term.is_empty() {
+			if search_term.is_empty() && ! CONFIG.csv {
 				return Ok(vec![]);
 			}
 
@@ -281,10 +285,7 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 						false => None
 					}
 				})
-				.map(|result| match CONFIG.quiet {
-						false => format!("{}: {}", result.id, result.name),
-						true => format!("{}", result.id)
-				})
+				.map(|result| result_render(result))
 				.collect::<Vec<String>>();
 
 			return Ok(results);
@@ -308,7 +309,7 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 				CONFIG.traits_file.display()
 			);
 
-			if search_term.is_empty() {
+			if search_term.is_empty() && ! CONFIG.csv {
 				return Ok(vec![]);
 			}
 
@@ -324,10 +325,7 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 							false => None
 						}
 				})
-				.map(|result| match CONFIG.quiet {
-						false => format!("{}: {}", result.id, result.name),
-						true => format!("{}", result.id)
-				})
+				.map(|result| result_render(result))
 				.collect::<Vec<String>>();
 
 			return Ok(results);
@@ -350,7 +348,7 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 				CONFIG.items_file.display()
 			);
 
-			if search_term.is_empty() {
+			if search_term.is_empty() && ! CONFIG.csv {
 				return Ok(vec![]);
 			}
 
@@ -366,10 +364,7 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 							false => None
 						}
 				})
-				.map(|result| match CONFIG.quiet {
-						false => format!("{}: {}", result.id, result.name),
-						true => format!("{}", result.id)
-				})
+				.map(|result| result_render(result))
 				.collect::<Vec<String>>();
 
 			return Ok(results);
@@ -425,7 +420,7 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 
 			// ------------------------------------------------------------
 
-			if search_term.is_empty() {
+			if search_term.is_empty() && ! CONFIG.csv {
 				return Ok(vec![]);
 			}
 

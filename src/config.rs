@@ -24,6 +24,7 @@ pub struct Config {
 	pub item: bool,
 
 	pub quiet: bool,
+	pub csv: bool,
 
     pub reverse: bool,
 
@@ -54,6 +55,7 @@ impl Config {
             config.item = opt.item;
             config.reverse = opt.reverse;
             config.quiet = opt.quiet;
+            config.csv = opt.csv;
 
             // default (but only when not resetting data)
             if ! (config.any || config.skill || config.r#trait || config.item) {
@@ -163,6 +165,10 @@ struct Opt {
 	/// Only print id number results upon match
 	#[structopt(short = "q", long)]
 	quiet: bool,
+
+	/// Print results as csv-formatted data
+	#[structopt(short = "c", long)]
+	csv: bool,
 
     /// Search for this
     search_term: Option<String>,
