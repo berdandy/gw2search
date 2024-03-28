@@ -1,3 +1,7 @@
+# Version 0.7.4 - csv exporter
+
+- using a -c option will format output as an 'id,name' csv file. It can be combined with -a/-s/-t/-i options and search terms
+
 # Version 0.7.3 - no-search empty string
 
 - If a blank search term is entered, a search is not performed. Data file download still occurs, however, making this useful for a pre-cache with `gw2search -a`
