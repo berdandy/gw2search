@@ -69,7 +69,7 @@
 
         <Package Id='*'
             Keywords='Installer'
-            Description='Searches for ids in the gw2 api. Searches items, skills and traits.'
+            Description='Searches in the gw2 api. Supports items, skills and traits.'
             Manufacturer='Andy Berdan'
             InstallerVersion='450'
             Languages='1033'
