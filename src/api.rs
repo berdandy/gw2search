@@ -21,7 +21,6 @@ pub trait ResultRender {
 pub struct Skill {
     pub id: u32,
     pub name: String,
-    // TODO: the rest?
 }
 
 impl ResultRender for Skill {
@@ -479,7 +478,7 @@ impl ResultRender for Spec {
 #[serde(transparent)]
 pub struct ApiSpec(Spec);
 
-impl<'de> Deserialize<'de> for ApiSpecialization {
+impl<'de> Deserialize<'de> for ApiSpec {
     fn deserialize<D>(d: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -501,6 +500,145 @@ impl<'de> Deserialize<'de> for ApiSpecialization {
 impl From<ApiSpec> for Spec {
     fn from(spec: ApiSpec) -> Self {
         Spec {
+            id: spec.0.id,
+            name: spec.0.name,
+        }
+    }
+}
+
+// /v2/professions
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Profession {
+    pub id: String,
+    pub name: String,
+}
+
+impl ResultRender for Profession {
+    fn pretty(&self) -> String  { format!("{}: {}", self.id, self.name) }
+    fn id_only(&self) -> String { format!("{}", self.id) }
+    fn csv(&self) -> String    { format!("{},{}", self.id, self.name) }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(transparent)]
+pub struct ApiProfession(Profession);
+
+impl<'de> Deserialize<'de> for ApiProfession {
+    fn deserialize<D>(d: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Debug, Deserialize)]
+        struct ProfessionDeser {
+            pub id: String,
+            pub name: String,
+        }
+
+        let spec = ProfessionDeser::deserialize(d)?;
+        Ok(ApiProfession(Profession {
+            id: spec.id,
+            name: spec.name,
+        }))
+    }
+}
+
+impl From<ApiProfession> for Profession {
+    fn from(spec: ApiProfession) -> Self {
+        Profession {
+            id: spec.0.id,
+            name: spec.0.name,
+        }
+    }
+}
+
+// ------------------------------------------------------------
+
+// /v2/pets
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Pet {
+    pub id: u32,
+    pub name: String,
+}
+
+impl ResultRender for Pet {
+    fn pretty(&self) -> String  { format!("{}: {}", self.id, self.name) }
+    fn id_only(&self) -> String { format!("{}", self.id) }
+    fn csv(&self) -> String    { format!("{},{}", self.id, self.name) }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(transparent)]
+pub struct ApiPet(Pet);
+
+impl<'de> Deserialize<'de> for ApiPet {
+    fn deserialize<D>(d: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Debug, Deserialize)]
+        struct PetDeser {
+            pub id: u32,
+            pub name: String,
+        }
+
+        let spec = PetDeser::deserialize(d)?;
+        Ok(ApiPet(Pet {
+            id: spec.id,
+            name: spec.name,
+        }))
+    }
+}
+
+impl From<ApiPet> for Pet {
+    fn from(spec: ApiPet) -> Self {
+        Pet {
+            id: spec.0.id,
+            name: spec.0.name,
+        }
+    }
+}
+
+// ------------------------------------------------------------
+
+// /v2/legends
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Legend {
+    pub id: String,
+    pub name: String,
+}
+
+impl ResultRender for Legend {
+    fn pretty(&self) -> String  { format!("{}: {}", self.id, self.name) }
+    fn id_only(&self) -> String { format!("{}", self.id) }
+    fn csv(&self) -> String    { format!("{},{}", self.id, self.name) }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(transparent)]
+pub struct ApiLegend(Legend);
+
+impl<'de> Deserialize<'de> for ApiLegend {
+    fn deserialize<D>(d: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Debug, Deserialize)]
+        struct LegendDeser {
+            pub id: String,
+            pub name: String,
+        }
+
+        let spec = LegendDeser::deserialize(d)?;
+        Ok(ApiLegend(Legend {
+            id: spec.id,
+            name: spec.name,
+        }))
+    }
+}
+
+impl From<ApiLegend> for Legend {
+    fn from(spec: ApiLegend) -> Self {
+        Legend {
             id: spec.0.id,
             name: spec.0.name,
         }

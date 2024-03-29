@@ -16,12 +16,16 @@ use lazy_static::lazy_static;
 pub const CACHE_PREFIX: &str = "cache_";
 pub const PRODUCT_PREFIX: &str = "gw2search";
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Config {
 	pub any: bool,
 	pub skill: bool,
 	pub r#trait: bool,
 	pub item: bool,
+	pub spec: bool,
+	pub profession: bool,
+	pub pet: bool,
+	pub legend: bool,
 
 	pub quiet: bool,
 	pub csv: bool,
@@ -34,6 +38,10 @@ pub struct Config {
     pub items_file: PathBuf,
     pub skills_file: PathBuf,
     pub traits_file: PathBuf,
+    pub specs_file: PathBuf,
+    pub professions_file: PathBuf,
+    pub pets_file: PathBuf,
+    pub legends_file: PathBuf,
 
     pub search_term: Option<String>,
 }
@@ -53,12 +61,17 @@ impl Config {
             config.skill = opt.skill;
             config.r#trait = opt.r#trait;
             config.item = opt.item;
+            config.spec = opt.spec;
+            config.profession = opt.profession;
+            config.pet = opt.pet;
+            config.legend = opt.legend;
             config.reverse = opt.reverse;
             config.quiet = opt.quiet;
             config.csv = opt.csv;
 
             // default (but only when not resetting data)
-            if ! (config.any || config.skill || config.r#trait || config.item) {
+            if ! (config.any || config.skill || config.r#trait || config.item || config.spec || config.profession || config.pet || config.legend) {
+                println!("no search type; assuming default item search");
                 config.item = true;
             }
         }
@@ -111,8 +124,24 @@ impl Config {
         traits_path.push(format!("traits{}.bin", lang_suffix));
         config.traits_file = traits_path;
 
+        let mut specs_path = data_dir.clone();
+        specs_path.push(format!("specs{}.bin", lang_suffix));
+        config.specs_file = specs_path;
+
+        let mut professions_path = data_dir.clone();
+        professions_path.push(format!("professions{}.bin", lang_suffix));
+        config.professions_file = professions_path;
+
+        let mut pets_path = data_dir.clone();
+        pets_path.push(format!("pets{}.bin", lang_suffix));
+        config.pets_file = pets_path;
+
+        let mut legends_path = data_dir.clone();
+        legends_path.push(format!("legends{}.bin", lang_suffix));
+        config.legends_file = legends_path;
+
         if opt.reset_data {
-            for file in [&config.items_file, &config.skills_file, &config.traits_file] {
+            for file in [&config.items_file, &config.skills_file, &config.traits_file, &config.specs_file, &config.professions_file, &config.pets_file, &config.legends_file] {
                 match remove_data_file(file) {
                     Err(e) => println!(
                         "Failed to remove file {}: {}",
@@ -157,6 +186,22 @@ struct Opt {
     /// Search for item (default)
     #[structopt(short = "i", long)]
     item: bool,
+
+    /// Search for specialization
+    #[structopt(short = "S", long)]
+    spec: bool,
+
+    /// Search for professions
+    #[structopt(short = "p", long)]
+    profession: bool,
+
+    /// Search for pets
+    #[structopt(short = "P", long)]
+    pet: bool,
+
+    /// Search for legends
+    #[structopt(short = "l", long)]
+    legend: bool,
 
     /// Search for id instead of name
     #[structopt(short = "r", long)]

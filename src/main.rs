@@ -39,8 +39,14 @@ pub fn main() -> iced::Result {
             cfg if cfg.skill => SearchMode::Skill,
             cfg if cfg.item => SearchMode::Item,
             cfg if cfg.r#trait => SearchMode::Trait,
+            cfg if cfg.spec => SearchMode::Spec,
+            cfg if cfg.profession => SearchMode::Profession,
+            cfg if cfg.pet => SearchMode::Pet,
+            cfg if cfg.legend => SearchMode::Legend,
             _ => SearchMode::Skip,
         };
+
+		println!("MODE: {}", mode);
 
         if mode != SearchMode::Skip {
             let term = match &CONFIG.search_term {
@@ -78,6 +84,10 @@ pub enum SearchMode {
 	Item,
 	Skill,
 	Trait,
+	Spec,
+	Profession,
+	Pet,
+	Legend,
     Skip,
 }
 impl Default for SearchMode {
@@ -85,11 +95,15 @@ impl Default for SearchMode {
 }
 // for drop down
 impl SearchMode {
-    const ALL: [SearchMode; 4] = [
+    const ALL: [SearchMode; 8] = [
 		SearchMode::Any,
 		SearchMode::Item,
 		SearchMode::Skill,
 		SearchMode::Trait,
+		SearchMode::Spec,
+		SearchMode::Profession,
+		SearchMode::Pet,
+		SearchMode::Legend,
     ];
 }
 impl std::fmt::Display for SearchMode {
@@ -102,6 +116,10 @@ impl std::fmt::Display for SearchMode {
                 SearchMode::Item => "Item",
                 SearchMode::Skill => "Skill",
                 SearchMode::Trait => "Trait",
+                SearchMode::Spec => "Spec",
+                SearchMode::Profession => "Profession",
+                SearchMode::Pet => "Pet",
+                SearchMode::Legend => "Legend",
                 SearchMode::Skip => "---",
             }
         )
@@ -171,7 +189,7 @@ impl Sandbox for Gw2Search {
 				}
 			}
 			Message::DeleteData => {
-				for file in [&CONFIG.items_file, &CONFIG.skills_file, &CONFIG.traits_file] {
+				for file in [&CONFIG.items_file, &CONFIG.skills_file, &CONFIG.traits_file, &CONFIG.specs_file, &CONFIG.professions_file, &CONFIG.pets_file, &CONFIG.legends_file] {
 					match config::remove_data_file(file) {
 						Err(e) => println!(
 							"Failed to remove file {}: {}",
@@ -368,6 +386,162 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 				.collect::<Vec<String>>();
 
 			return Ok(results);
+		}
+		SearchMode::Spec => {
+			debug!("Loading specializtions");
+			let specs: Vec<api::Spec> = request::get_data(&CONFIG.specs_file, || async {
+				let api_specs: Vec<api::ApiSpec> =
+					request::request_paginated("specializations", &CONFIG.lang).await?;
+				Ok(api_specs
+					.into_iter()
+					.map(|api_spec| api::Spec::from(api_spec))
+					.collect())
+			})
+			.await?;
+			debug!(
+				"Loaded {} specs stored at '{}'",
+				specs.len(),
+				CONFIG.specs_file.display()
+			);
+
+			if search_term.is_empty() && ! CONFIG.csv {
+				return Ok(vec![]);
+			}
+
+			let results: Vec<_> = specs
+				.iter()
+				.filter_map(|spec| match in_reverse {
+					false => match &spec.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
+						true => Some(spec),
+						false => None
+					},
+					true => match &spec.id.to_string() == &search_term.to_ascii_lowercase() {
+						true => Some(spec),
+						false => None
+					}
+				})
+				.map(|result| result_render(result))
+				.collect::<Vec<String>>();
+
+			return Ok(results);
+
+		}
+		SearchMode::Profession => {
+			debug!("Loading professions");
+			let professions: Vec<api::Profession> = request::get_data(&CONFIG.professions_file, || async {
+				let api_professions: Vec<api::Profession> =
+					request::request_paginated("professions", &CONFIG.lang).await?;
+				Ok(api_professions
+					.into_iter()
+					.map(|api_profession| api::Profession::from(api_profession))
+					.collect())
+			})
+			.await?;
+			debug!(
+				"Loaded {} professions stored at '{}'",
+				professions.len(),
+				CONFIG.professions_file.display()
+			);
+
+			if search_term.is_empty() && ! CONFIG.csv {
+				return Ok(vec![]);
+			}
+
+			let results: Vec<_> = professions
+				.iter()
+				.filter_map(|profession| match in_reverse {
+					false => match &profession.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
+						true => Some(profession),
+						false => None
+					},
+					true => match &profession.id.to_string() == &search_term.to_ascii_lowercase() {
+						true => Some(profession),
+						false => None
+					}
+				})
+				.map(|result| result_render(result))
+				.collect::<Vec<String>>();
+
+			return Ok(results);
+
+		}
+		SearchMode::Pet => {
+			debug!("Loading pets");
+			let pets: Vec<api::Pet> = request::get_data(&CONFIG.pets_file, || async {
+				let api_pets: Vec<api::Pet> =
+					request::request_paginated("pets", &CONFIG.lang).await?;
+				Ok(api_pets
+					.into_iter()
+					.map(|api_pet| api::Pet::from(api_pet))
+					.collect())
+			})
+			.await?;
+			debug!(
+				"Loaded {} pets stored at '{}'",
+				pets.len(),
+				CONFIG.pets_file.display()
+			);
+
+			if search_term.is_empty() && ! CONFIG.csv {
+				return Ok(vec![]);
+			}
+
+			let results: Vec<_> = pets
+				.iter()
+				.filter_map(|pet| match in_reverse {
+					false => match &pet.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
+						true => Some(pet),
+						false => None
+					},
+					true => match &pet.id.to_string() == &search_term.to_ascii_lowercase() {
+						true => Some(pet),
+						false => None
+					}
+				})
+				.map(|result| result_render(result))
+				.collect::<Vec<String>>();
+
+			return Ok(results);
+
+		}
+		SearchMode::Legend => {
+			debug!("Loading legends");
+			let legends: Vec<api::Legend> = request::get_data(&CONFIG.legends_file, || async {
+				let api_legends: Vec<api::Legend> =
+					request::request_paginated("legends", &CONFIG.lang).await?;
+				Ok(api_legends
+					.into_iter()
+					.map(|api_legend| api::Legend::from(api_legend))
+					.collect())
+			})
+			.await?;
+			debug!(
+				"Loaded {} legends stored at '{}'",
+				legends.len(),
+				CONFIG.legends_file.display()
+			);
+
+			if search_term.is_empty() && ! CONFIG.csv {
+				return Ok(vec![]);
+			}
+
+			let results: Vec<_> = legends
+				.iter()
+				.filter_map(|legend| match in_reverse {
+					false => match &legend.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
+						true => Some(legend),
+						false => None
+					},
+					true => match &legend.id.to_string() == &search_term.to_ascii_lowercase() {
+						true => Some(legend),
+						false => None
+					}
+				})
+				.map(|result| result_render(result))
+				.collect::<Vec<String>>();
+
+			return Ok(results);
+
 		}
 		SearchMode::Any => {
 			debug!("Loading skills");
