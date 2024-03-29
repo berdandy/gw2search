@@ -461,3 +461,48 @@ struct ItemUpgrade {
     upgrade: String,
     item_id: i32,
 }
+
+// types for /specializations
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Spec {
+    pub id: u32,
+    pub name: String,
+}
+
+impl ResultRender for Spec {
+    fn pretty(&self) -> String  { format!("{}: {}", self.id, self.name) }
+    fn id_only(&self) -> String { format!("{}", self.id) }
+    fn csv(&self) -> String    { format!("{},{}", self.id, self.name) }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(transparent)]
+pub struct ApiSpec(Spec);
+
+impl<'de> Deserialize<'de> for ApiSpecialization {
+    fn deserialize<D>(d: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Debug, Deserialize)]
+        struct SpecDeser {
+            pub id: u32,
+            pub name: String,
+        }
+
+        let spec = SpecDeser::deserialize(d)?;
+        Ok(ApiSpec(Spec {
+            id: spec.id,
+            name: spec.name,
+        }))
+    }
+}
+
+impl From<ApiSpec> for Spec {
+    fn from(spec: ApiSpec) -> Self {
+        Spec {
+            id: spec.0.id,
+            name: spec.0.name,
+        }
+    }
+}
