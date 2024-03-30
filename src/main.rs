@@ -46,8 +46,6 @@ pub fn main() -> iced::Result {
             _ => SearchMode::Skip,
         };
 
-		println!("MODE: {}", mode);
-
         if mode != SearchMode::Skip {
             let term = match &CONFIG.search_term {
                 Some(term) => term.clone(),

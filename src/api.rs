@@ -26,7 +26,7 @@ pub struct Skill {
 impl ResultRender for Skill {
     fn pretty(&self) -> String  { format!("{}: {}", self.id, self.name) }
     fn id_only(&self) -> String { format!("{}", self.id) }
-    fn csv(&self) -> String    { format!("{},{}", self.id, self.name) }
+    fn csv(&self) -> String    { format!("{},\"{}\"", self.id, self.name) }
 }
 
 pub fn result_render(result: &impl ResultRender) -> String {
@@ -76,13 +76,12 @@ impl From<ApiSkill> for Skill {
 pub struct Trait {
     pub id: u32,
     pub name: String,
-    // TODO: the rest?
 }
 
 impl ResultRender for Trait {
     fn pretty(&self) -> String  { format!("{}: {}", self.id, self.name) }
     fn id_only(&self) -> String { format!("{}", self.id) }
-    fn csv(&self) -> String    { format!("{},{}", self.id, self.name) }
+    fn csv(&self) -> String    { format!("{},\"{}\"", self.id, self.name) }
 }
 
 #[derive(Debug, Serialize)]
@@ -137,7 +136,7 @@ pub struct Item {
 impl ResultRender for Item {
     fn pretty(&self) -> String  { format!("{}: {}", self.id, self.name) }
     fn id_only(&self) -> String { format!("{}", self.id) }
-    fn csv(&self) -> String    { format!("{},{}", self.id, self.name) }
+    fn csv(&self) -> String    { format!("{},\"{}\"", self.id, self.name) }
 }
 
 #[derive(Debug, Serialize)]
@@ -471,7 +470,7 @@ pub struct Spec {
 impl ResultRender for Spec {
     fn pretty(&self) -> String  { format!("{}: {}", self.id, self.name) }
     fn id_only(&self) -> String { format!("{}", self.id) }
-    fn csv(&self) -> String    { format!("{},{}", self.id, self.name) }
+    fn csv(&self) -> String    { format!("{},\"{}\"", self.id, self.name) }
 }
 
 #[derive(Debug, Serialize)]
@@ -516,7 +515,7 @@ pub struct Profession {
 impl ResultRender for Profession {
     fn pretty(&self) -> String  { format!("{}: {}", self.id, self.name) }
     fn id_only(&self) -> String { format!("{}", self.id) }
-    fn csv(&self) -> String    { format!("{},{}", self.id, self.name) }
+    fn csv(&self) -> String    { format!("{},\"{}\"", self.id, self.name) }
 }
 
 #[derive(Debug, Serialize)]
@@ -563,7 +562,7 @@ pub struct Pet {
 impl ResultRender for Pet {
     fn pretty(&self) -> String  { format!("{}: {}", self.id, self.name) }
     fn id_only(&self) -> String { format!("{}", self.id) }
-    fn csv(&self) -> String    { format!("{},{}", self.id, self.name) }
+    fn csv(&self) -> String    { format!("{},\"{}\"", self.id, self.name) }
 }
 
 #[derive(Debug, Serialize)]
@@ -610,7 +609,7 @@ pub struct Legend {
 impl ResultRender for Legend {
     fn pretty(&self) -> String  { format!("{}: {}", self.id, self.name) }
     fn id_only(&self) -> String { format!("{}", self.id) }
-    fn csv(&self) -> String    { format!("{},{}", self.id, self.name) }
+    fn csv(&self) -> String    { format!("{},\"{}\"", self.id, self.name) }
 }
 
 #[derive(Debug, Serialize)]
