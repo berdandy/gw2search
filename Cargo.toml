@@ -1,6 +1,6 @@
 [package]
 name = "gw2search"
-version = "0.8.2"
+version = "0.8.3"
 description = "Searches in the gw2 api. Supports items, skills, traits, specializations, professions, pets, legends."
 edition = "2021"
 authors = ["Andy Berdan <andy@berdan.ca>"]
@@ -35,11 +35,15 @@ phf = { version = "0.10.1", features = ["macros"] }
 lazy_static = "1.4.0"
 strum = { version = "0.24.1", features = ["derive"] }
 iced = "0.4.2"
+format_render = { path = "format_render" }
 
 # The profile that 'cargo dist' will build with
 [profile.dist]
 inherits = "release"
 lto = "thin"
+
+[workspace]
+members = ["format_render"]
 
 # Config for 'cargo dist'
 [workspace.metadata.dist]

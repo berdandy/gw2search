@@ -13,26 +13,22 @@ use config::CONFIG;
 
 use lazy_static::lazy_static;
 
-pub trait ResultRender {
+use format_render::FormatRender;
+
+pub trait FormatRender {
     fn pretty(&self) -> String;
     fn id_only(&self) -> String;
     fn csv(&self) -> String; // id,name
 }
 
 // types for /skills
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, FormatRender)]
 pub struct Skill {
     pub id: u32,
     pub name: String,
 }
 
-impl ResultRender for Skill {
-    fn pretty(&self) -> String  { format!("{}: {}", self.id, self.name) }
-    fn id_only(&self) -> String { format!("{}", self.id) }
-    fn csv(&self) -> String    { format!("{},\"{}\"", self.id, self.name) }
-}
-
-pub fn result_render(result: &impl ResultRender) -> String {
+pub fn result_render(result: &impl FormatRender) -> String {
     match CONFIG.quiet {
         true => result.id_only(),
         false => match CONFIG.csv {
@@ -75,16 +71,10 @@ impl From<ApiSkill> for Skill {
 }
 
 // types for /traits
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, FormatRender)]
 pub struct Trait {
     pub id: u32,
     pub name: String,
-}
-
-impl ResultRender for Trait {
-    fn pretty(&self) -> String  { format!("{}: {}", self.id, self.name) }
-    fn id_only(&self) -> String { format!("{}", self.id) }
-    fn csv(&self) -> String    { format!("{},\"{}\"", self.id, self.name) }
 }
 
 #[derive(Debug, Serialize)]
@@ -120,7 +110,7 @@ impl From<ApiTrait> for Trait {
 }
 
 // types for /items
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, FormatRender)]
 pub struct Item {
     pub id: u32,
     pub name: String,
@@ -134,12 +124,6 @@ pub struct Item {
     upgrades_into: Option<Vec<ItemUpgrade>>,
     upgrades_from: Option<Vec<ItemUpgrade>>,
     details: Option<ItemDetails>,
-}
-
-impl ResultRender for Item {
-    fn pretty(&self) -> String  { format!("{}: {}", self.id, self.name) }
-    fn id_only(&self) -> String { format!("{}", self.id) }
-    fn csv(&self) -> String    { format!("{},\"{}\"", self.id, self.name) }
 }
 
 #[derive(Debug, Serialize)]
@@ -464,16 +448,10 @@ struct ItemUpgrade {
 }
 
 // types for /specializations
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, FormatRender)]
 pub struct Spec {
     pub id: u32,
     pub name: String,
-}
-
-impl ResultRender for Spec {
-    fn pretty(&self) -> String  { format!("{}: {}", self.id, self.name) }
-    fn id_only(&self) -> String { format!("{}", self.id) }
-    fn csv(&self) -> String    { format!("{},\"{}\"", self.id, self.name) }
 }
 
 #[derive(Debug, Serialize)]
@@ -509,16 +487,10 @@ impl From<ApiSpec> for Spec {
 }
 
 // /v2/professions
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, FormatRender)]
 pub struct Profession {
     pub id: String,
     pub name: String,
-}
-
-impl ResultRender for Profession {
-    fn pretty(&self) -> String  { format!("{}: {}", self.id, self.name) }
-    fn id_only(&self) -> String { format!("{}", self.id) }
-    fn csv(&self) -> String    { format!("{},\"{}\"", self.id, self.name) }
 }
 
 #[derive(Debug, Serialize)]
@@ -556,16 +528,10 @@ impl From<ApiProfession> for Profession {
 // ------------------------------------------------------------
 
 // /v2/pets
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, FormatRender)]
 pub struct Pet {
     pub id: u32,
     pub name: String,
-}
-
-impl ResultRender for Pet {
-    fn pretty(&self) -> String  { format!("{}: {}", self.id, self.name) }
-    fn id_only(&self) -> String { format!("{}", self.id) }
-    fn csv(&self) -> String    { format!("{},\"{}\"", self.id, self.name) }
 }
 
 #[derive(Debug, Serialize)]
@@ -616,16 +582,10 @@ lazy_static! {
 }
 
 // /v2/legends
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, FormatRender)]
 pub struct Legend {
     pub id: String,
     pub name: String, // manufactured
-}
-
-impl ResultRender for Legend {
-    fn pretty(&self) -> String  { format!("{}: {}", self.id, LEGEND_NAMES[&self.id]) }
-    fn id_only(&self) -> String { format!("{}", self.id) }
-    fn csv(&self) -> String    { format!("{},\"{}\"", self.id, LEGEND_NAMES[&self.id]) }
 }
 
 #[derive(Debug, Serialize)]

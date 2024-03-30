@@ -686,6 +686,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "format_render"
+version = "0.1.0"
+dependencies = [
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "futures"
 version = "0.3.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -921,13 +929,14 @@ dependencies = [
 
 [[package]]
 name = "gw2search"
-version = "0.8.2"
+version = "0.8.3"
 dependencies = [
  "bincode",
  "colored",
  "csv",
  "dirs",
  "flate2",
+ "format_render",
  "futures",
  "iced",
  "lazy_static",
