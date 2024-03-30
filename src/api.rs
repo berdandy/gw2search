@@ -619,6 +619,7 @@ lazy_static! {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Legend {
     pub id: String,
+    pub name: String, // manufactured
 }
 
 impl ResultRender for Legend {
@@ -639,13 +640,12 @@ impl<'de> Deserialize<'de> for ApiLegend {
         #[derive(Debug, Deserialize)]
         struct LegendDeser {
             pub id: String,
-            //pub name: String,
         }
 
         let spec = LegendDeser::deserialize(d)?;
         Ok(ApiLegend(Legend {
-            id: spec.id,
-            //name: spec.name,
+            id: spec.id.clone(),
+            name: String::from(LEGEND_NAMES[&spec.id]),
         }))
     }
 }
@@ -654,7 +654,7 @@ impl From<ApiLegend> for Legend {
     fn from(spec: ApiLegend) -> Self {
         Legend {
             id: spec.0.id,
-            //name: spec.0.name,
+            name: spec.0.name,
         }
     }
 }

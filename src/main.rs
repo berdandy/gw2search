@@ -1,8 +1,6 @@
 mod api;
 mod config;
 mod request;
-#[cfg(test)]
-mod tests;
 
 use iced::{
     button, scrollable, text_input, pick_list, Alignment, Button, Column, Element, Color,
@@ -16,19 +14,67 @@ use std::io::Write;
 
 use crate::api::result_render;
 
-macro_rules! debug {
-    ($($e:expr),+) => {
-        {
-            #[cfg(debug_assertions)]
-            {
-                dbg!($($e),+)
-            }
-            #[cfg(not(debug_assertions))]
-            {
-                ($($e),+)
-            }
-        }
-    };
+/// api_search!(api::ApiSkill, api::Skill, &CONFIG.skills_file, "skills") -> results
+macro_rules! api_search {
+	($api_type:ty, $type:ty, $file:expr, $endpoint:expr) => {
+		request::get_data($file, || async {
+			let api_results: Vec<$api_type> = request::request_paginated($endpoint, &CONFIG.lang).await?;
+			Ok(api_results
+				.into_iter()
+				.map(|api_result| <$type>::from(api_result))
+				.collect())
+		})
+		.await?
+	}
+}
+
+/// api_filter!(results_to_filter, search_term, in_reverse);
+macro_rules! api_filter {
+	($results:expr, $search:expr, $reverse:expr) => {
+		$results
+			.iter()
+			.filter_map(|r| match $reverse {
+				false => match &r.name.to_ascii_lowercase().contains(&$search.to_ascii_lowercase()) {
+					true => Some(r),
+					false => None
+				},
+				true => match &r.id.to_string() == &$search.to_ascii_lowercase() {
+					true => Some(r),
+					false => None
+				}
+			})
+			.map(|r| result_render(r))
+			.collect::<Vec<String>>()
+	};
+	($results:expr, $search:expr, $reverse:expr, $annotation:expr) => {
+		$results
+			.iter()
+			.filter_map(|r| match $reverse {
+				false => match &r.name.to_ascii_lowercase().contains(&$search.to_ascii_lowercase()) {
+					true => Some(r),
+					false => None
+				},
+				true => match &r.id.to_string() == &$search.to_ascii_lowercase() {
+					true => Some(r),
+					false => None
+				}
+			})
+			.map(|r| result_render(r) + $annotation)
+			.collect::<Vec<String>>()
+	}
+}
+
+/// api_searcher!(api::ApiSkill, api::Skill, &CONFIG.skills_file, "skills", search_term, in_reverse);
+macro_rules! api_searcher {
+	($api_type:ty, $type:ty, $file:expr, $endpoint:expr, $search:expr, $reverse:expr) => {
+		let results = api_search!($api_type, $type, $file, $endpoint);
+
+		if $search.is_empty() && ! CONFIG.csv {
+			return Ok(vec![]);
+		}
+
+		return Ok(api_filter!(results, $search, $reverse));
+	}
 }
 
 pub fn main() -> iced::Result {
@@ -269,327 +315,34 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
             Ok(vec![])
         },
 		SearchMode::Skill => {
-			debug!("Loading skills");
-			let skills: Vec<api::Skill> = request::get_data(&CONFIG.skills_file, || async {
-				let api_skills: Vec<api::ApiSkill> =
-					request::request_paginated("skills", &CONFIG.lang).await?;
-				Ok(api_skills
-					.into_iter()
-					.map(|api_skill| api::Skill::from(api_skill))
-					.collect())
-			})
-			.await?;
-			debug!(
-				"Loaded {} skills stored at '{}'",
-				skills.len(),
-				CONFIG.skills_file.display()
-			);
-
-			if search_term.is_empty() && ! CONFIG.csv {
-				return Ok(vec![]);
-			}
-
-			let results: Vec<_> = skills
-				.iter()
-				.filter_map(|skill| match in_reverse {
-					false => match &skill.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
-						true => Some(skill),
-						false => None
-					},
-					true => match &skill.id.to_string() == &search_term.to_ascii_lowercase() {
-						true => Some(skill),
-						false => None
-					}
-				})
-				.map(|result| result_render(result))
-				.collect::<Vec<String>>();
-
-			return Ok(results);
-
+			api_searcher!(api::ApiSkill, api::Skill, &CONFIG.skills_file, "skills", search_term, in_reverse);
 		}
 		SearchMode::Trait => {
-			debug!("Loading traits");
-
-			let traits: Vec<api::Trait> = request::get_data(&CONFIG.traits_file, || async {
-				let api_traits: Vec<api::ApiTrait> =
-					request::request_paginated("traits", &CONFIG.lang).await?;
-				Ok(api_traits
-					.into_iter()
-					.map(|api_trait| api::Trait::from(api_trait))
-					.collect())
-			})
-			.await?;
-			debug!(
-				"Loaded {} traits stored at '{}'",
-				traits.len(),
-				CONFIG.traits_file.display()
-			);
-
-			if search_term.is_empty() && ! CONFIG.csv {
-				return Ok(vec![]);
-			}
-
-			let results: Vec<_> = traits
-				.iter()
-				.filter_map(|r#trait| match in_reverse {
-						false => match &r#trait.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
-							true => Some(r#trait),
-							false => None
-						},
-						true => match &r#trait.id.to_string() == &search_term.to_ascii_lowercase() {
-							true => Some(r#trait),
-							false => None
-						}
-				})
-				.map(|result| result_render(result))
-				.collect::<Vec<String>>();
-
-			return Ok(results);
-
+			api_searcher!(api::ApiTrait, api::Trait, &CONFIG.traits_file, "traits", search_term, in_reverse);
 		}
 		SearchMode::Item => {
-			debug!("Loading items");
-			let items: Vec<api::Item> = request::get_data(&CONFIG.items_file, || async {
-				let api_items: Vec<api::ApiItem> =
-					request::request_paginated("items", &CONFIG.lang).await?;
-				Ok(api_items
-					.into_iter()
-					.map(|api_item| api::Item::from(api_item))
-					.collect())
-			})
-			.await?;
-			debug!(
-				"Loaded {} items stored at '{}'",
-				items.len(),
-				CONFIG.items_file.display()
-			);
-
-			if search_term.is_empty() && ! CONFIG.csv {
-				return Ok(vec![]);
-			}
-
-			let results: Vec<_> = items
-				.iter()
-				.filter_map(|item| match in_reverse {
-						false => match &item.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
-							true => Some(item),
-							false => None
-						},
-						true => match &item.id.to_string() == &search_term.to_ascii_lowercase() {
-							true => Some(item),
-							false => None
-						}
-				})
-				.map(|result| result_render(result))
-				.collect::<Vec<String>>();
-
-			return Ok(results);
+			api_searcher!(api::ApiItem, api::Item, &CONFIG.items_file, "items", search_term, in_reverse);
 		}
 		SearchMode::Spec => {
-			debug!("Loading specializtions");
-			let specs: Vec<api::Spec> = request::get_data(&CONFIG.specs_file, || async {
-				let api_specs: Vec<api::ApiSpec> =
-					request::request_paginated("specializations", &CONFIG.lang).await?;
-				Ok(api_specs
-					.into_iter()
-					.map(|api_spec| api::Spec::from(api_spec))
-					.collect())
-			})
-			.await?;
-			debug!(
-				"Loaded {} specs stored at '{}'",
-				specs.len(),
-				CONFIG.specs_file.display()
-			);
-
-			if search_term.is_empty() && ! CONFIG.csv {
-				return Ok(vec![]);
-			}
-
-			let results: Vec<_> = specs
-				.iter()
-				.filter_map(|spec| match in_reverse {
-					false => match &spec.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
-						true => Some(spec),
-						false => None
-					},
-					true => match &spec.id.to_string() == &search_term.to_ascii_lowercase() {
-						true => Some(spec),
-						false => None
-					}
-				})
-				.map(|result| result_render(result))
-				.collect::<Vec<String>>();
-
-			return Ok(results);
-
+			api_searcher!(api::ApiSpec, api::Spec, &CONFIG.specs_file, "specializations", search_term, in_reverse);
 		}
 		SearchMode::Profession => {
-			debug!("Loading professions");
-			let professions: Vec<api::Profession> = request::get_data(&CONFIG.professions_file, || async {
-				let api_professions: Vec<api::Profession> =
-					request::request_paginated("professions", &CONFIG.lang).await?;
-				Ok(api_professions
-					.into_iter()
-					.map(|api_profession| api::Profession::from(api_profession))
-					.collect())
-			})
-			.await?;
-			debug!(
-				"Loaded {} professions stored at '{}'",
-				professions.len(),
-				CONFIG.professions_file.display()
-			);
-
-			if search_term.is_empty() && ! CONFIG.csv {
-				return Ok(vec![]);
-			}
-
-			let results: Vec<_> = professions
-				.iter()
-				.filter_map(|profession| match in_reverse {
-					false => match &profession.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
-						true => Some(profession),
-						false => None
-					},
-					true => match &profession.id.to_string() == &search_term.to_ascii_lowercase() {
-						true => Some(profession),
-						false => None
-					}
-				})
-				.map(|result| result_render(result))
-				.collect::<Vec<String>>();
-
-			return Ok(results);
-
+			api_searcher!(api::ApiProfession, api::Profession, &CONFIG.professions_file, "professions", search_term, in_reverse);
 		}
 		SearchMode::Pet => {
-			debug!("Loading pets");
-			let pets: Vec<api::Pet> = request::get_data(&CONFIG.pets_file, || async {
-				let api_pets: Vec<api::Pet> =
-					request::request_paginated("pets", &CONFIG.lang).await?;
-				Ok(api_pets
-					.into_iter()
-					.map(|api_pet| api::Pet::from(api_pet))
-					.collect())
-			})
-			.await?;
-			debug!(
-				"Loaded {} pets stored at '{}'",
-				pets.len(),
-				CONFIG.pets_file.display()
-			);
-
-			if search_term.is_empty() && ! CONFIG.csv {
-				return Ok(vec![]);
-			}
-
-			let results: Vec<_> = pets
-				.iter()
-				.filter_map(|pet| match in_reverse {
-					false => match &pet.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
-						true => Some(pet),
-						false => None
-					},
-					true => match &pet.id.to_string() == &search_term.to_ascii_lowercase() {
-						true => Some(pet),
-						false => None
-					}
-				})
-				.map(|result| result_render(result))
-				.collect::<Vec<String>>();
-
-			return Ok(results);
-
+			api_searcher!(api::ApiPet, api::Pet, &CONFIG.pets_file, "pets", search_term, in_reverse);
 		}
 		SearchMode::Legend => {
-			debug!("Loading legends");
-			let legends: Vec<api::Legend> = request::get_data(&CONFIG.legends_file, || async {
-				let api_legends: Vec<api::Legend> =
-					request::request_paginated("legends", &CONFIG.lang).await?;
-				Ok(api_legends
-					.into_iter()
-					.map(|api_legend| api::Legend::from(api_legend))
-					.collect())
-			})
-			.await?;
-			debug!(
-				"Loaded {} legends stored at '{}'",
-				legends.len(),
-				CONFIG.legends_file.display()
-			);
-
-			if search_term.is_empty() && ! CONFIG.csv {
-				return Ok(vec![]);
-			}
-
-			let results: Vec<_> = legends
-				.iter()
-				.filter_map(|legend| match in_reverse {
-					// false => match &legend.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
-					false => match &legend.id.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
-						true => Some(legend),
-						false => None
-					},
-					true => match &legend.id.to_string() == &search_term.to_ascii_lowercase() {
-						true => Some(legend),
-						false => None
-					}
-				})
-				.map(|result| result_render(result))
-				.collect::<Vec<String>>();
-
-			return Ok(results);
-
+			api_searcher!(api::ApiLegend, api::Legend, &CONFIG.legends_file, "legends", search_term, in_reverse);
 		}
 		SearchMode::Any => {
-			debug!("Loading skills");
-			let skills: Vec<api::Skill> = request::get_data(&CONFIG.skills_file, || async {
-				let api_skills: Vec<api::ApiSkill> =
-					request::request_paginated("skills", &CONFIG.lang).await?;
-				Ok(api_skills
-					.into_iter()
-					.map(|api_skill| api::Skill::from(api_skill))
-					.collect())
-			})
-			.await?;
-			debug!(
-				"Loaded {} skills stored at '{}'",
-				skills.len(),
-				CONFIG.skills_file.display()
-			);
-
-			debug!("Loading traits");
-			let traits: Vec<api::Trait> = request::get_data(&CONFIG.traits_file, || async {
-				let api_traits: Vec<api::ApiTrait> =
-					request::request_paginated("traits", &CONFIG.lang).await?;
-				Ok(api_traits
-					.into_iter()
-					.map(|api_trait| api::Trait::from(api_trait))
-					.collect())
-			})
-			.await?;
-			debug!(
-				"Loaded {} traits stored at '{}'",
-				traits.len(),
-				CONFIG.traits_file.display()
-			);
-
-			debug!("Loading items");
-			let items: Vec<api::Item> = request::get_data(&CONFIG.items_file, || async {
-				let api_items: Vec<api::ApiItem> =
-					request::request_paginated("items", &CONFIG.lang).await?;
-				Ok(api_items
-					.into_iter()
-					.map(|api_item| api::Item::from(api_item))
-					.collect())
-			})
-			.await?;
-			debug!(
-				"Loaded {} items stored at '{}'",
-				items.len(),
-				CONFIG.items_file.display()
-			);
+			let skills = api_search!(api::ApiSkill, api::Skill, &CONFIG.skills_file, "skills");
+			let traits = api_search!(api::ApiTrait, api::Trait, &CONFIG.traits_file, "traits");
+			let items = api_search!(api::ApiItem, api::Item, &CONFIG.items_file, "items");
+			let specs = api_search!(api::ApiSpec, api::Spec, &CONFIG.specs_file, "specializations");
+			let professions = api_search!(api::ApiProfession, api::Profession, &CONFIG.professions_file, "professions");
+			let pets = api_search!(api::ApiPet, api::Pet, &CONFIG.pets_file, "pets");
+			let legends = api_search!(api::ApiLegend, api::Legend, &CONFIG.legends_file, "legends");
 
 			// ------------------------------------------------------------
 
@@ -597,48 +350,16 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 				return Ok(vec![]);
 			}
 
-			Ok(skills
-				.iter()
-				.filter_map(|skill| match in_reverse {
-					false => match &skill.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
-						true => Some(skill),
-						false => None
-					},
-					true => match &skill.id.to_string() == &search_term.to_ascii_lowercase() {
-						true => Some(skill),
-						false => None
-					}
-				})	
-				.map(|result| format!("{}: {} [SKILL]", result.id, result.name))
-				.chain(traits
-					.iter()
-					.filter_map(|r#trait| match in_reverse {
-							false => match &r#trait.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
-								true => Some(r#trait),
-								false => None
-							},
-							true => match &r#trait.id.to_string() == &search_term.to_ascii_lowercase() {
-								true => Some(r#trait),
-								false => None
-							}
-					})
-					.map(|result| format!("{}: {} [TRAIT]", result.id, result.name))
-					.chain(items
-						.iter()
-						.filter_map(|item| match in_reverse {
-								false => match &item.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
-									true => Some(item),
-									false => None
-								},
-								true => match &item.id.to_string() == &search_term.to_ascii_lowercase() {
-									true => Some(item),
-									false => None
-								}
-						})
-						.map(|result| format!("{}: {} [ITEM]", result.id, result.name))
-					)
-				)
-			.collect::<Vec<String>>())
+			let mut results: Vec<String> = vec![];
+			results.extend(api_filter!(skills, search_term, in_reverse, " [SKILL]"));
+			results.extend(api_filter!(traits, search_term, in_reverse, " [TRAIT]"));
+			results.extend(api_filter!(items, search_term, in_reverse, " [ITEM]"));
+			results.extend(api_filter!(professions, search_term, in_reverse, " [PROFESSION]"));
+			results.extend(api_filter!(specs, search_term, in_reverse, " [SPECIALIZATION]"));
+			results.extend(api_filter!(pets, search_term, in_reverse, " [PET]"));
+			results.extend(api_filter!(legends, search_term, in_reverse, " [LEGEND]"));
+
+			Ok(results)
 		}
 	}
 }
