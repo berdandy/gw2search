@@ -3,12 +3,15 @@
 
 use serde::{de, Deserialize, Deserializer, Serialize};
 use std::fmt;
+use std::collections::HashMap;
 
 use phf::{phf_map, phf_set};
 use strum::Display;
 
 use crate::config;
 use config::CONFIG;
+
+use lazy_static::lazy_static;
 
 pub trait ResultRender {
     fn pretty(&self) -> String;
@@ -599,17 +602,29 @@ impl From<ApiPet> for Pet {
 
 // ------------------------------------------------------------
 
+// maybe someday Legend7 will be in the API :'(
+lazy_static! {
+    static ref LEGEND_NAMES: HashMap<String, &'static str> = HashMap::from([
+        ( String::from("Legend1"), "Dragon/Glint" ),
+        ( String::from("Legend2"), "Assassin/Shiro" ),
+        ( String::from("Legend3"), "Dwarf/Jalis" ),
+        ( String::from("Legend4"), "Demon/Mallyx" ),
+        ( String::from("Legend5"), "Renegade/Kalla" ),
+        ( String::from("Legend6"), "Centaur/Ventari" ),
+        ( String::from("Legend7"), "Alliance/Archemorus/Saint Viktor" ),
+    ]);
+}
+
 // /v2/legends
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Legend {
     pub id: String,
-    pub name: String,
 }
 
 impl ResultRender for Legend {
-    fn pretty(&self) -> String  { format!("{}: {}", self.id, self.name) }
+    fn pretty(&self) -> String  { format!("{}: {}", self.id, LEGEND_NAMES[&self.id]) }
     fn id_only(&self) -> String { format!("{}", self.id) }
-    fn csv(&self) -> String    { format!("{},\"{}\"", self.id, self.name) }
+    fn csv(&self) -> String    { format!("{},\"{}\"", self.id, LEGEND_NAMES[&self.id]) }
 }
 
 #[derive(Debug, Serialize)]
@@ -624,13 +639,13 @@ impl<'de> Deserialize<'de> for ApiLegend {
         #[derive(Debug, Deserialize)]
         struct LegendDeser {
             pub id: String,
-            pub name: String,
+            //pub name: String,
         }
 
         let spec = LegendDeser::deserialize(d)?;
         Ok(ApiLegend(Legend {
             id: spec.id,
-            name: spec.name,
+            //name: spec.name,
         }))
     }
 }
@@ -639,7 +654,7 @@ impl From<ApiLegend> for Legend {
     fn from(spec: ApiLegend) -> Self {
         Legend {
             id: spec.0.id,
-            name: spec.0.name,
+            //name: spec.0.name,
         }
     }
 }

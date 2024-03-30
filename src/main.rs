@@ -526,7 +526,8 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 			let results: Vec<_> = legends
 				.iter()
 				.filter_map(|legend| match in_reverse {
-					false => match &legend.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
+					// false => match &legend.name.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
+					false => match &legend.id.to_ascii_lowercase().contains(&search_term.to_ascii_lowercase()) {
 						true => Some(legend),
 						false => None
 					},

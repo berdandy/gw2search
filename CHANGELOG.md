@@ -1,3 +1,8 @@
+# Version 0.8.2 - endpoints!
+
+- Legend endpoints addressed slightly. There is a hardcoded id-name mapping, because that doesn't exist in the API
+- Placeholder Legend7 (Alliance) is also there, should the api actually return it someday
+
 # Version 0.8.1 - endpoints!
 
 - Added new endpoints: professions, specializations, pets, legends (just id/name data available)
