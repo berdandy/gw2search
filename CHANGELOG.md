@@ -1,3 +1,8 @@
+# Version 0.8.1 - endpoints!
+
+- Added new endpoints: professions, specializations, pets, legends (just id/name data available)
+- Changed csv output to have quoted name (supports internal comma)
+
 # Version 0.7.4 - csv exporter
 
 - using a -c option will format output as an 'id,name' csv file. It can be combined with -a/-s/-t/-i options and search terms
