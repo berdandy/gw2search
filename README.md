@@ -46,7 +46,7 @@ FLAGS:
     -P, --pet           Search for pets
     -p, --profession    Search for professions
     -q, --quiet         Only print id number results upon match
-        --reset-data    Download content from the GW2 API, replacing any previously cached kontent
+        --reset-data    Download content from the GW2 API, replacing any previously cached content
     -r, --reverse       Search for id instead of name
     -s, --skill         Search for skill
     -S, --spec          Search for specialization
