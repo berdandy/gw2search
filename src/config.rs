@@ -224,7 +224,7 @@ struct Opt {
     /// Search for this
     search_term: Option<String>,
 
-    /// Download content from the GW2 API, replacing any previously cached kontent
+    /// Download content from the GW2 API, replacing any previously cached content
     #[structopt(long)]
     reset_data: bool,
 
