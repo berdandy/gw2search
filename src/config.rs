@@ -29,6 +29,7 @@ pub struct Config {
 
 	pub quiet: bool,
 	pub csv: bool,
+	pub json: bool,
 
     pub reverse: bool,
 
@@ -68,6 +69,7 @@ impl Config {
             config.reverse = opt.reverse;
             config.quiet = opt.quiet;
             config.csv = opt.csv;
+            config.json = opt.json;
 
             // default (but only when not resetting data)
             if ! (config.any || config.skill || config.r#trait || config.item || config.spec || config.profession || config.pet || config.legend) {
@@ -214,6 +216,10 @@ struct Opt {
 	/// Print results as csv-formatted data
 	#[structopt(short = "c", long)]
 	csv: bool,
+
+	/// Print results as json-formatted data
+	#[structopt(short = "j", long)]
+	json: bool,
 
     /// Search for this
     search_term: Option<String>,

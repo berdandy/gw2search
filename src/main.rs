@@ -69,7 +69,7 @@ macro_rules! api_searcher {
 	($api_type:ty, $type:ty, $file:expr, $endpoint:expr, $search:expr, $reverse:expr) => {
 		let results = api_search!($api_type, $type, $file, $endpoint);
 
-		if $search.is_empty() && ! CONFIG.csv {
+		if $search.is_empty() && !CONFIG.csv && !CONFIG.json {
 			return Ok(vec![]);
 		}
 
@@ -101,9 +101,9 @@ pub fn main() -> iced::Result {
                 Ok(results) => results,
                 Err(e) => panic!("error searching with commandline search: {}", e),
             };
-			let sep = match CONFIG.quiet {
-				false => "\n",
+			let sep = match CONFIG.quiet || CONFIG.json {
 				true => ",",
+				false => "\n",
 			};
 	
 			if CONFIG.quiet {
@@ -112,6 +112,8 @@ pub fn main() -> iced::Result {
 				io::stdout().flush().unwrap();
 			} else if CONFIG.csv {
 				println!("id,name\n{}", results.join(sep));
+			} else if CONFIG.json {
+				println!("[{}]", results.join(sep));
 			} else {
 				println!("{}", results.join(sep));
 			}
@@ -346,7 +348,7 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 
 			// ------------------------------------------------------------
 
-			if search_term.is_empty() && ! CONFIG.csv {
+			if search_term.is_empty() && !CONFIG.csv && !CONFIG.json {
 				return Ok(vec![]);
 			}
 

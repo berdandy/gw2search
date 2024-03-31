@@ -2,6 +2,7 @@
 #![allow(unused_variables)]
 
 use serde::{de, Deserialize, Deserializer, Serialize};
+use serde_json::json;
 use std::fmt;
 use std::collections::HashMap;
 
@@ -19,6 +20,7 @@ pub trait FormatRender {
     fn pretty(&self) -> String;
     fn id_only(&self) -> String;
     fn csv(&self) -> String; // id,name
+	fn json(&self) -> String; // "full" object??
 }
 
 // types for /skills
@@ -26,6 +28,7 @@ pub trait FormatRender {
 pub struct Skill {
     pub id: u32,
     pub name: String,
+    pub description: String,
 }
 
 pub fn result_render(result: &impl FormatRender) -> String {
@@ -33,7 +36,10 @@ pub fn result_render(result: &impl FormatRender) -> String {
         true => result.id_only(),
         false => match CONFIG.csv {
             true => result.csv(),
-            false => result.pretty()
+            false => match CONFIG.json {
+                true => result.json(),
+                false => result.pretty(),
+            }
         }
     }
 }
@@ -51,12 +57,14 @@ impl<'de> Deserialize<'de> for ApiSkill {
         struct SkillDeser {
             pub id: u32,
             pub name: String,
+            pub description: String,
         }
 
         let skill = SkillDeser::deserialize(d)?;
         Ok(ApiSkill(Skill {
             id: skill.id,
             name: skill.name,
+            description: skill.description,
         }))
     }
 }
@@ -66,6 +74,7 @@ impl From<ApiSkill> for Skill {
         Skill {
             id: skill.0.id,
             name: skill.0.name,
+            description: skill.0.description,
         }
     }
 }
@@ -452,6 +461,7 @@ struct ItemUpgrade {
 pub struct Spec {
     pub id: u32,
     pub name: String,
+    pub major_traits: Vec<u32>,
 }
 
 #[derive(Debug, Serialize)]
@@ -467,12 +477,14 @@ impl<'de> Deserialize<'de> for ApiSpec {
         struct SpecDeser {
             pub id: u32,
             pub name: String,
+            pub major_traits: Vec<u32>,
         }
 
         let spec = SpecDeser::deserialize(d)?;
         Ok(ApiSpec(Spec {
             id: spec.id,
             name: spec.name,
+            major_traits: spec.major_traits,
         }))
     }
 }
@@ -482,6 +494,7 @@ impl From<ApiSpec> for Spec {
         Spec {
             id: spec.0.id,
             name: spec.0.name,
+            major_traits: spec.0.major_traits,
         }
     }
 }
@@ -491,6 +504,7 @@ impl From<ApiSpec> for Spec {
 pub struct Profession {
     pub id: String,
     pub name: String,
+    pub skills_by_palette: Vec<Vec<u32>>,
 }
 
 #[derive(Debug, Serialize)]
@@ -506,12 +520,14 @@ impl<'de> Deserialize<'de> for ApiProfession {
         struct ProfessionDeser {
             pub id: String,
             pub name: String,
+            pub skills_by_palette: Vec<Vec<u32>>,
         }
 
         let spec = ProfessionDeser::deserialize(d)?;
         Ok(ApiProfession(Profession {
             id: spec.id,
             name: spec.name,
+            skills_by_palette: spec.skills_by_palette,
         }))
     }
 }
@@ -521,6 +537,7 @@ impl From<ApiProfession> for Profession {
         Profession {
             id: spec.0.id,
             name: spec.0.name,
+            skills_by_palette: spec.0.skills_by_palette,
         }
     }
 }

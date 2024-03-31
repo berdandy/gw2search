@@ -1,3 +1,14 @@
+# Version 0.8.3 - json
+
+- Added json exporter
+- New json data:
+	specialization:major_traits
+	profession:skills_by_palette
+	skill:description
+
+- Refactor to implement pretty-print/id/csv output as a derive macro
+- Refactor to make api endpoints not quite as much of a copy-paste garbage fire
+
 # Version 0.8.2 - endpoints!
 
 - Legend endpoints addressed slightly. There is a hardcoded id-name mapping, because that doesn't exist in the API

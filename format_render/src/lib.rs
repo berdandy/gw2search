@@ -15,7 +15,8 @@ fn impl_format_render_macro(ast: &syn::DeriveInput) -> TokenStream {
         impl FormatRender for #name {
 			fn pretty(&self) -> String  { format!("{}: {}", self.id, self.name) }
 			fn id_only(&self) -> String { format!("{}", self.id) }
-			fn csv(&self) -> String    { format!("{},\"{}\"", self.id, self.name) }
+			fn csv(&self) -> String     { format!("{},\"{}\"", self.id, self.name) }
+            fn json(&self) -> String    { json!(self).to_string() }
         }
     };
     gen.into()
