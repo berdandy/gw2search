@@ -70,7 +70,8 @@ OPTIONS:
         --lang <lang>                  One of "en", "es", "de", or "fr". Defaults to "en"
 
 ARGS:
-    <search-term>    Search for this```
+    <search-term>    Search for this
+```
 
 ## Output:
 
