@@ -100,6 +100,8 @@ id,name
 ```
 $ gw2search -js thousand
 [{"description":"Preparation. Mark your current area with inhibiting magic, readying the location to poison enemies.","id":13026,"name":"Prepare Thousand Needles"},{"description":"Psionic. Open a portal that devastates targets in a line in front of you with a flurry of blades.","id":24755,"name":"Thousand Cuts"},{"description":"Unleash a hail of needles that immobilizes enemies on impact and poisons the ground, inflicting conditions over time.","id":56898,"name":"Thousand Needles"}]
+```
+
 ---
 
 This project contains MIT-licensed code from gw2-arbitrage. The MIT license file was not provided, but [it may be found here](https://github.com/t-mw/gw2-arbitrage).
