@@ -9,7 +9,6 @@ use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use structopt::StructOpt;
 use strum::{Display, EnumString, EnumVariantNames, VariantNames};
-use toml;
 
 use lazy_static::lazy_static;
 
@@ -88,24 +87,23 @@ impl Config {
             }
         };
 
-        if let None = config.lang {
+        if config.lang.is_none() {
             if let Some(code) = file.lang {
                 config.lang = code.parse().map_or_else(
                     |e| {
                         println!("Config file: {}", e);
                         None
                     },
-                    |c| Some(c),
+                    Some,
                 )
             }
         }
 
         let cache_dir = cache_dir(&opt.cache_dir).expect("Failed to identify cache dir");
         ensure_dir(&cache_dir).expect("Failed to create cache dir");
-        match flush_cache(&cache_dir) {
-            Err(e) => println!("Failed to flush cache dir {}: {}", &cache_dir.display(), e),
-            _ => (),
-        }
+		if let Err(e) = flush_cache(&cache_dir) {
+			println!("Failed to flush cache dir {}: {}", &cache_dir.display(), e);
+		}
         config.cache_dir = cache_dir;
 
         let data_dir = data_dir(&opt.data_dir).expect("Failed to identify data dir");
@@ -144,14 +142,9 @@ impl Config {
 
         if opt.reset_data {
             for file in [&config.items_file, &config.skills_file, &config.traits_file, &config.specs_file, &config.professions_file, &config.pets_file, &config.legends_file] {
-                match remove_data_file(file) {
-                    Err(e) => println!(
-                        "Failed to remove file {}: {}",
-                        file.display(),
-                        e
-                    ),
-                    _ => (),
-                };
+				if let Err(e) = remove_data_file(file) {
+					println!("Failed to remove file {}: {}", file.display(), e);
+				}
             }
         }
 
@@ -338,7 +331,7 @@ pub enum Discipline {
 
 fn ensure_dir(dir: &PathBuf) -> Result<&PathBuf, Box<dyn std::error::Error>> {
     if !dir.exists() {
-        std::fs::create_dir(&dir)
+        std::fs::create_dir(dir)
             .map_err(|e| format!("Failed to create '{}' ({})", dir.display(), e).into())
             .and(Ok(dir))
     } else {
@@ -365,7 +358,7 @@ fn flush_cache(cache_dir: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     // Assume our request triggered the cache
     // Give a prefix; on Windows the user cache and user local data folders are the same
     let expired = SystemTime::now() - Duration::new(300, 0);
-    for file in fs::read_dir(&cache_dir)? {
+    for file in fs::read_dir(cache_dir)? {
         let file = file?;
         let filename = file.file_name().into_string();
         if let Ok(name) = filename {
@@ -401,7 +394,7 @@ fn data_dir(dir: &Option<PathBuf>) -> Result<PathBuf, Box<dyn std::error::Error>
 pub fn remove_data_file(file: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     if file.exists() {
         println!("Removing existing data file at '{}'", file.display());
-        std::fs::remove_file(&file)
+        std::fs::remove_file(file)
             .map_err(|e| format!("Failed to remove '{}' ({})", file.display(), e))?;
     }
     Ok(())

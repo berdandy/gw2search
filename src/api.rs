@@ -549,6 +549,7 @@ impl From<ApiProfession> for Profession {
 pub struct Pet {
     pub id: u32,
     pub name: String,
+	pub icon: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -564,21 +565,24 @@ impl<'de> Deserialize<'de> for ApiPet {
         struct PetDeser {
             pub id: u32,
             pub name: String,
+            pub icon: String,
         }
 
-        let spec = PetDeser::deserialize(d)?;
+        let pet = PetDeser::deserialize(d)?;
         Ok(ApiPet(Pet {
-            id: spec.id,
-            name: spec.name,
+            id: pet.id,
+            name: pet.name,
+			icon: pet.icon,
         }))
     }
 }
 
 impl From<ApiPet> for Pet {
-    fn from(spec: ApiPet) -> Self {
+    fn from(pet: ApiPet) -> Self {
         Pet {
-            id: spec.0.id,
-            name: spec.0.name,
+            id: pet.0.id,
+            name: pet.0.name,
+            icon: pet.0.icon,
         }
     }
 }
@@ -619,19 +623,19 @@ impl<'de> Deserialize<'de> for ApiLegend {
             pub id: String,
         }
 
-        let spec = LegendDeser::deserialize(d)?;
+        let legend = LegendDeser::deserialize(d)?;
         Ok(ApiLegend(Legend {
-            id: spec.id.clone(),
-            name: String::from(LEGEND_NAMES[&spec.id]),
+            id: legend.id.clone(),
+            name: String::from(LEGEND_NAMES[&legend.id]),
         }))
     }
 }
 
 impl From<ApiLegend> for Legend {
-    fn from(spec: ApiLegend) -> Self {
+    fn from(legend: ApiLegend) -> Self {
         Legend {
-            id: spec.0.id,
-            name: spec.0.name,
+            id: legend.0.id,
+            name: legend.0.name,
         }
     }
 }

@@ -1,12 +1,10 @@
 #![allow(dead_code)]
 
-use bincode;
 use bincode::{deserialize_from, serialize_into};
 use flate2::read::DeflateDecoder;
 use flate2::write::DeflateEncoder;
 use flate2::Compression;
 use futures::{stream, StreamExt};
-use serde_json;
 
 use std::collections::hash_map::DefaultHasher;
 use std::fs::File;

@@ -1,6 +1,5 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn;
 
 #[proc_macro_derive(FormatRender)]
 pub fn format_render(input: TokenStream) -> TokenStream {
