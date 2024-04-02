@@ -340,7 +340,7 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 
 					code: 7,
 					swap: 62891,
-					heal: 62718,
+					heal: 62719,
 					utilities: [62832, 62962, 62878],
 					elite: 62942,
 			});
