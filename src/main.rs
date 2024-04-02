@@ -236,14 +236,9 @@ impl Sandbox for Gw2Search {
 			}
 			Message::DeleteData => {
 				for file in [&CONFIG.items_file, &CONFIG.skills_file, &CONFIG.traits_file, &CONFIG.specs_file, &CONFIG.professions_file, &CONFIG.pets_file, &CONFIG.legends_file] {
-					match config::remove_data_file(file) {
-						Err(e) => println!(
-							"Failed to remove file {}: {}",
-							file.display(),
-							e
-						),
-						_ => (),
-					};
+					if let Err(e) = config::remove_data_file(file) {
+						println!("Failed to remove file {}: {}", file.display(), e);
+					}
 				}
 			}
 		}
