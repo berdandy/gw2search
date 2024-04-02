@@ -589,7 +589,7 @@ impl From<ApiPet> for Pet {
 
 // ------------------------------------------------------------
 
-// maybe someday Legend7 will be in the API :'(
+// I'm choosing to interpret vindicator/alliance as TWO legends
 lazy_static! {
     static ref LEGEND_NAMES: HashMap<String, &'static str> = HashMap::from([
         ( String::from("Legend1"), "Dragon/Glint" ),
@@ -598,15 +598,20 @@ lazy_static! {
         ( String::from("Legend4"), "Demon/Mallyx" ),
         ( String::from("Legend5"), "Renegade/Kalla" ),
         ( String::from("Legend6"), "Centaur/Ventari" ),
-        ( String::from("Legend7"), "Alliance/Archemorus/Saint Viktor" ),
     ]);
 }
 
 // /v2/legends
-#[derive(Debug, Serialize, Deserialize, FormatRender)]
+#[derive(Debug, Clone, Serialize, Deserialize, FormatRender)]
 pub struct Legend {
     pub id: String,
     pub name: String, // manufactured
+
+    pub code: u32,
+    pub swap: u32,
+    pub heal: u32,
+    pub utilities: [u32; 3],
+    pub elite: u32,
 }
 
 #[derive(Debug, Serialize)]
@@ -621,21 +626,40 @@ impl<'de> Deserialize<'de> for ApiLegend {
         #[derive(Debug, Deserialize)]
         struct LegendDeser {
             pub id: String,
+
+            pub code: u32,
+            pub swap: u32,
+            pub heal: u32,
+            pub utilities: [u32; 3],
+            pub elite: u32,
         }
 
         let legend = LegendDeser::deserialize(d)?;
         Ok(ApiLegend(Legend {
             id: legend.id.clone(),
-            name: String::from(LEGEND_NAMES[&legend.id]),
+            name: String::from("---"),
+
+            code: legend.code,
+            swap: legend.swap,
+            heal: legend.heal,
+            utilities: legend.utilities,
+            elite: legend.elite,
         }))
     }
 }
 
 impl From<ApiLegend> for Legend {
     fn from(legend: ApiLegend) -> Self {
+        let id = legend.0.id;
         Legend {
-            id: legend.0.id,
-            name: legend.0.name,
+            id: id.clone(),
+            name: String::from(*LEGEND_NAMES.get(&id).expect("invalid legend")),
+
+            code: legend.0.code,
+            swap: legend.0.swap,
+            heal: legend.0.heal,
+            utilities: legend.0.utilities,
+            elite: legend.0.elite,
         }
     }
 }
