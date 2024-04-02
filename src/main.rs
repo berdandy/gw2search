@@ -342,7 +342,7 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 					swap: 62891,
 					heal: 62718,
 					utilities: [62832, 62962, 62878],
-					elite: 62941,
+					elite: 62942,
 			});
 			results.push(api::Legend {
                 id: String::from("Legend8"),
