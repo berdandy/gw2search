@@ -1,3 +1,9 @@
+# Version 0.8.5
+
+- Added pet icon url to model
+- Added legends skills to model
+- Added hardcoded fake legends 7 & 8 to accomodate alliance legend (until api changes)
+
 # Version 0.8.3 - json
 
 - Added json exporter
