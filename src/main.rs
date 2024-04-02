@@ -125,9 +125,11 @@ pub fn main() -> iced::Result {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Default)]
 pub enum SearchMode {
     Any,
-	Item,
+	#[default]
+ Item,
 	Skill,
 	Trait,
 	Spec,
@@ -136,9 +138,7 @@ pub enum SearchMode {
 	Legend,
     Skip,
 }
-impl Default for SearchMode {
-    fn default() -> Self { SearchMode::Item }
-}
+
 // for drop down
 impl SearchMode {
     const ALL: [SearchMode; 8] = [

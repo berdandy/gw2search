@@ -411,9 +411,9 @@ fn config_file(file: &Option<PathBuf>) -> Result<PathBuf, Box<dyn std::error::Er
             config_dir
         })
         .or_else(|| std::env::current_dir().ok())
-        .and_then(|mut path| {
+        .map(|mut path| {
             path.push(PRODUCT_PREFIX.to_owned() + ".toml");
-            Some(path)
+            path
         })
         .ok_or_else(|| "Failed to access current working directory".into())
 }

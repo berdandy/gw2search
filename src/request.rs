@@ -147,7 +147,7 @@ where
         return Ok(v);
     }
 
-    let v = fetch(&url, display).await?;
+    let v = fetch(url, display).await?;
 
     // save cache file
     let file = File::create(cache_path)?;
