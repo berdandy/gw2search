@@ -339,9 +339,9 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 					name: String::from("Alliance/Luxon/Archemorus"),
 
 					code: 7,
-					swap: 62890,
+					swap: 62891,
 					heal: 62718,
-					utilities: [62831, 62962, 62878],
+					utilities: [62832, 62962, 62878],
 					elite: 62941,
 			});
 			results.push(api::Legend {
@@ -349,7 +349,7 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
                 name: String::from("Alliance/Kurzick/Saint Viktor"),
 
                 code: 8,
-                swap: 62890,
+                swap: 62891,
                 heal: 62679,
                 utilities: [62701, 62941, 62796],
                 elite: 62686,
