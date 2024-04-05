@@ -457,10 +457,11 @@ struct ItemUpgrade {
 }
 
 // types for /specializations
-#[derive(Debug, Serialize, Deserialize, FormatRender)]
+#[derive(Debug, Clone, Serialize, Deserialize, FormatRender)]
 pub struct Spec {
     pub id: u32,
     pub name: String,
+	pub elite: bool,
     pub major_traits: Vec<u32>,
 }
 
@@ -477,6 +478,7 @@ impl<'de> Deserialize<'de> for ApiSpec {
         struct SpecDeser {
             pub id: u32,
             pub name: String,
+			pub elite: bool,
             pub major_traits: Vec<u32>,
         }
 
@@ -484,6 +486,7 @@ impl<'de> Deserialize<'de> for ApiSpec {
         Ok(ApiSpec(Spec {
             id: spec.id,
             name: spec.name,
+			elite: spec.elite,
             major_traits: spec.major_traits,
         }))
     }
@@ -494,6 +497,7 @@ impl From<ApiSpec> for Spec {
         Spec {
             id: spec.0.id,
             name: spec.0.name,
+			elite: spec.0.elite,
             major_traits: spec.0.major_traits,
         }
     }

@@ -22,6 +22,7 @@ pub struct Config {
 	pub r#trait: bool,
 	pub item: bool,
 	pub spec: bool,
+	pub elite_spec: bool,
 	pub profession: bool,
 	pub pet: bool,
 	pub legend: bool,
@@ -62,6 +63,7 @@ impl Config {
             config.r#trait = opt.r#trait;
             config.item = opt.item;
             config.spec = opt.spec;
+            config.elite_spec = opt.elite_spec;
             config.profession = opt.profession;
             config.pet = opt.pet;
             config.legend = opt.legend;
@@ -71,7 +73,7 @@ impl Config {
             config.json = opt.json;
 
             // default (but only when not resetting data)
-            if ! (config.any || config.skill || config.r#trait || config.item || config.spec || config.profession || config.pet || config.legend) {
+            if ! (config.any || config.skill || config.r#trait || config.item || config.spec || config.elite_spec || config.profession || config.pet || config.legend) {
                 println!("no search type; assuming default item search");
                 config.item = true;
             }
@@ -183,6 +185,10 @@ struct Opt {
     item: bool,
 
     /// Search for specialization
+    #[structopt(short = "E", long)]
+    elite_spec: bool,
+
+    /// Search for only elite specializations
     #[structopt(short = "S", long)]
     spec: bool,
 

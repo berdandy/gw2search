@@ -1,3 +1,9 @@
+# Version 0.8.9
+
+- Added elite spec search type to only read from spec elite=true results (-E option)
+- Fixed skill id typos for alliance legend
+- Clippy happiness
+
 # Version 0.8.5
 
 - Added pet icon url to model

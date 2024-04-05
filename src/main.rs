@@ -86,6 +86,7 @@ pub fn main() -> iced::Result {
             cfg if cfg.item => SearchMode::Item,
             cfg if cfg.r#trait => SearchMode::Trait,
             cfg if cfg.spec => SearchMode::Spec,
+            cfg if cfg.elite_spec => SearchMode::EliteSpec,
             cfg if cfg.profession => SearchMode::Profession,
             cfg if cfg.pet => SearchMode::Pet,
             cfg if cfg.legend => SearchMode::Legend,
@@ -133,6 +134,7 @@ pub enum SearchMode {
 	Skill,
 	Trait,
 	Spec,
+	EliteSpec,
 	Profession,
 	Pet,
 	Legend,
@@ -163,6 +165,7 @@ impl std::fmt::Display for SearchMode {
                 SearchMode::Skill => "Skill",
                 SearchMode::Trait => "Trait",
                 SearchMode::Spec => "Spec",
+                SearchMode::EliteSpec => "Elite Spec",
                 SearchMode::Profession => "Profession",
                 SearchMode::Pet => "Pet",
                 SearchMode::Legend => "Legend",
@@ -328,6 +331,19 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 		}
 		SearchMode::Pet => {
 			api_searcher!(api::ApiPet, api::Pet, &CONFIG.pets_file, "pets", search_term, in_reverse);
+		}
+		SearchMode::EliteSpec => {
+			let elite_specs: Vec<api::Spec> = api_search!(api::ApiSpec, api::Spec, &CONFIG.specs_file, "specializations")
+				.iter()
+				.filter(|s| s.elite)
+				.cloned()
+				.collect();
+
+			if search_term.is_empty() && !CONFIG.csv && !CONFIG.json {
+				return Ok(vec![]);
+			}
+
+			Ok(api_filter!(elite_specs, search_term, in_reverse))
 		}
 		SearchMode::Legend => {
 			// can't use api_searcher! macro because we need to doctor the results:
