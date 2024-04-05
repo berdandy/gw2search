@@ -130,7 +130,7 @@ pub fn main() -> iced::Result {
 pub enum SearchMode {
     Any,
 	#[default]
- Item,
+	Item,
 	Skill,
 	Trait,
 	Spec,
@@ -143,12 +143,13 @@ pub enum SearchMode {
 
 // for drop down
 impl SearchMode {
-    const ALL: [SearchMode; 8] = [
+    const ALL: [SearchMode; 9] = [
 		SearchMode::Any,
 		SearchMode::Item,
 		SearchMode::Skill,
 		SearchMode::Trait,
 		SearchMode::Spec,
+		SearchMode::EliteSpec,
 		SearchMode::Profession,
 		SearchMode::Pet,
 		SearchMode::Legend,

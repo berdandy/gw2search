@@ -1,10 +1,11 @@
-# Version 0.8.9
+# Version 0.8.10 (2024-04-05) - elite filter
 
 - Added elite spec search type to only read from spec elite=true results (-E option)
+- Added elite spec search type to gui drop down
 - Fixed skill id typos for alliance legend
 - Clippy happiness
 
-# Version 0.8.5
+# Version 0.8.5 (2024-04-02)
 
 - Added pet icon url to model
 - Added legends skills to model
