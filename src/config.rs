@@ -184,11 +184,11 @@ struct Opt {
     #[structopt(short = "i", long)]
     item: bool,
 
-    /// Search for specialization
+    /// Search for only elite specializations
     #[structopt(short = "E", long)]
     elite_spec: bool,
 
-    /// Search for only elite specializations
+    /// Search for specialization
     #[structopt(short = "S", long)]
     spec: bool,
 
