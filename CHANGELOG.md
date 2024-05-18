@@ -1,3 +1,7 @@
+# Version 0.8.11 (2024-05-17) - elite filter help
+
+- Elite spec search type and non-elite spec search help text were swapped
+
 # Version 0.8.10 (2024-04-05) - elite filter
 
 - Added elite spec search type to only read from spec elite=true results (-E option)
