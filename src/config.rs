@@ -74,7 +74,7 @@ impl Config {
 
             // default (but only when not resetting data)
             if ! (config.any || config.skill || config.r#trait || config.item || config.spec || config.elite_spec || config.profession || config.pet || config.legend) {
-                println!("no search type; assuming default item search");
+                eprintln!("no search type; assuming default item search");
                 config.item = true;
             }
         }
@@ -93,7 +93,7 @@ impl Config {
             if let Some(code) = file.lang {
                 config.lang = code.parse().map_or_else(
                     |e| {
-                        println!("Config file: {}", e);
+                        eprintln!("Config file: {}", e);
                         None
                     },
                     Some,
@@ -104,7 +104,7 @@ impl Config {
         let cache_dir = cache_dir(&opt.cache_dir).expect("Failed to identify cache dir");
         ensure_dir(&cache_dir).expect("Failed to create cache dir");
 		if let Err(e) = flush_cache(&cache_dir) {
-			println!("Failed to flush cache dir {}: {}", &cache_dir.display(), e);
+			eprintln!("Failed to flush cache dir {}: {}", &cache_dir.display(), e);
 		}
         config.cache_dir = cache_dir;
 
@@ -145,7 +145,7 @@ impl Config {
         if opt.reset_data {
             for file in [&config.items_file, &config.skills_file, &config.traits_file, &config.specs_file, &config.professions_file, &config.pets_file, &config.legends_file] {
 				if let Err(e) = remove_data_file(file) {
-					println!("Failed to remove file {}: {}", file.display(), e);
+					eprintln!("Failed to remove file {}: {}", file.display(), e);
 				}
             }
         }
@@ -399,7 +399,7 @@ fn data_dir(dir: &Option<PathBuf>) -> Result<PathBuf, Box<dyn std::error::Error>
 
 pub fn remove_data_file(file: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     if file.exists() {
-        println!("Removing existing data file at '{}'", file.display());
+        eprintln!("Removing existing data file at '{}'", file.display());
         std::fs::remove_file(file)
             .map_err(|e| format!("Failed to remove '{}' ({})", file.display(), e))?;
     }

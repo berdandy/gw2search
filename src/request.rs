@@ -108,7 +108,7 @@ where
         )
     };
 
-    println!("Fetching {}", url);
+    eprintln!("Fetching {}", url);
     let response = reqwest::get(&url).await?;
     if page_total.is_none() {
         let page_total_str = response
@@ -163,9 +163,9 @@ where
     T: serde::de::DeserializeOwned,
 {
     if let Some(url) = display {
-        println!("Fetching {}", url);
+        eprintln!("Fetching {}", url);
     } else {
-        println!("Fetching {}", url);
+        eprintln!("Fetching {}", url);
     }
 
     let response = reqwest::get(url).await?;

@@ -1,6 +1,7 @@
 # Version 0.8.12 (2024-05-27) - csv
 
 - Minor CSV format correction for double quotes in name field
+- Changed debug info to go to stderr
 
 # Version 0.8.11 (2024-05-17) - elite filter help
 
