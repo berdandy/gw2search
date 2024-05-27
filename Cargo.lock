@@ -967,7 +967,7 @@ dependencies = [
 
 [[package]]
 name = "gw2search"
-version = "0.8.11"
+version = "0.8.12"
 dependencies = [
  "bincode",
  "colored",
