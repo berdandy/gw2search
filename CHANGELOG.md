@@ -1,3 +1,7 @@
+# Version 0.8.12 (2024-05-27) - csv
+
+- Minor CSV format correction for double quotes in name field
+
 # Version 0.8.11 (2024-05-17) - elite filter help
 
 - Elite spec search type and non-elite spec search help text were swapped
