@@ -89,6 +89,7 @@ pub fn main() -> iced::Result {
             cfg if cfg.elite_spec => SearchMode::EliteSpec,
             cfg if cfg.profession => SearchMode::Profession,
             cfg if cfg.pet => SearchMode::Pet,
+            cfg if cfg.itemstat => SearchMode::Itemstat,
             cfg if cfg.legend => SearchMode::Legend,
             _ => SearchMode::Skip,
         };
@@ -138,12 +139,13 @@ pub enum SearchMode {
 	Profession,
 	Pet,
 	Legend,
+	Itemstat,
     Skip,
 }
 
 // for drop down
 impl SearchMode {
-    const ALL: [SearchMode; 9] = [
+    const ALL: [SearchMode; 10] = [
 		SearchMode::Any,
 		SearchMode::Item,
 		SearchMode::Skill,
@@ -153,6 +155,7 @@ impl SearchMode {
 		SearchMode::Profession,
 		SearchMode::Pet,
 		SearchMode::Legend,
+		SearchMode::Itemstat,
     ];
 }
 impl std::fmt::Display for SearchMode {
@@ -169,6 +172,7 @@ impl std::fmt::Display for SearchMode {
                 SearchMode::EliteSpec => "Elite Spec",
                 SearchMode::Profession => "Profession",
                 SearchMode::Pet => "Pet",
+                SearchMode::Itemstat => "Itemstat",
                 SearchMode::Legend => "Legend",
                 SearchMode::Skip => "---",
             }
@@ -330,6 +334,9 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 		SearchMode::Profession => {
 			api_searcher!(api::ApiProfession, api::Profession, &CONFIG.professions_file, "professions", search_term, in_reverse);
 		}
+		SearchMode::Itemstat => {
+			api_searcher!(api::ApiItemstat, api::Itemstat, &CONFIG.itemstats_file, "itemstats", search_term, in_reverse);
+		}
 		SearchMode::Pet => {
 			api_searcher!(api::ApiPet, api::Pet, &CONFIG.pets_file, "pets", search_term, in_reverse);
 		}
@@ -385,6 +392,7 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 			let specs = api_search!(api::ApiSpec, api::Spec, &CONFIG.specs_file, "specializations");
 			let professions = api_search!(api::ApiProfession, api::Profession, &CONFIG.professions_file, "professions");
 			let pets = api_search!(api::ApiPet, api::Pet, &CONFIG.pets_file, "pets");
+			let itemstats = api_search!(api::ApiItemstat, api::Itemstat, &CONFIG.itemstats_file, "itemstats");
 			let legends = api_search!(api::ApiLegend, api::Legend, &CONFIG.legends_file, "legends");
 
 			// ------------------------------------------------------------
@@ -400,6 +408,7 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 			results.extend(api_filter!(professions, search_term, in_reverse, " [PROFESSION]"));
 			results.extend(api_filter!(specs, search_term, in_reverse, " [SPECIALIZATION]"));
 			results.extend(api_filter!(pets, search_term, in_reverse, " [PET]"));
+			results.extend(api_filter!(itemstats, search_term, in_reverse, " [ITEMSTAT]"));
 			results.extend(api_filter!(legends, search_term, in_reverse, " [LEGEND]"));
 
 			Ok(results)

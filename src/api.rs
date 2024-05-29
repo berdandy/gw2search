@@ -593,6 +593,47 @@ impl From<ApiPet> for Pet {
 
 // ------------------------------------------------------------
 
+// /v2/itemstats
+#[derive(Debug, Serialize, Deserialize, FormatRender)]
+pub struct Itemstat {
+    pub id: u32,
+    pub name: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(transparent)]
+pub struct ApiItemstat(Itemstat);
+
+impl<'de> Deserialize<'de> for ApiItemstat {
+    fn deserialize<D>(d: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Debug, Deserialize)]
+        struct ItemstatDeser {
+            pub id: u32,
+            pub name: String,
+        }
+
+        let itemstat = ItemstatDeser::deserialize(d)?;
+        Ok(ApiItemstat(Itemstat {
+            id: itemstat.id,
+            name: itemstat.name,
+        }))
+    }
+}
+
+impl From<ApiItemstat> for Itemstat {
+    fn from(itemstat: ApiItemstat) -> Self {
+        Itemstat {
+            id: itemstat.0.id,
+            name: itemstat.0.name,
+        }
+    }
+}
+
+// ------------------------------------------------------------
+
 // I'm choosing to interpret vindicator/alliance as TWO legends
 lazy_static! {
     static ref LEGEND_NAMES: HashMap<String, &'static str> = HashMap::from([

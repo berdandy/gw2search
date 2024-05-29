@@ -25,6 +25,7 @@ pub struct Config {
 	pub elite_spec: bool,
 	pub profession: bool,
 	pub pet: bool,
+	pub itemstat: bool,
 	pub legend: bool,
 
 	pub quiet: bool,
@@ -42,6 +43,7 @@ pub struct Config {
     pub specs_file: PathBuf,
     pub professions_file: PathBuf,
     pub pets_file: PathBuf,
+    pub itemstats_file: PathBuf,
     pub legends_file: PathBuf,
 
     pub search_term: Option<String>,
@@ -66,6 +68,7 @@ impl Config {
             config.elite_spec = opt.elite_spec;
             config.profession = opt.profession;
             config.pet = opt.pet;
+            config.itemstat = opt.itemstat;
             config.legend = opt.legend;
             config.reverse = opt.reverse;
             config.quiet = opt.quiet;
@@ -73,7 +76,7 @@ impl Config {
             config.json = opt.json;
 
             // default (but only when not resetting data)
-            if ! (config.any || config.skill || config.r#trait || config.item || config.spec || config.elite_spec || config.profession || config.pet || config.legend) {
+            if ! (config.any || config.skill || config.r#trait || config.item || config.spec || config.elite_spec || config.profession || config.pet || config.itemstat || config.legend) {
                 eprintln!("no search type; assuming default item search");
                 config.item = true;
             }
@@ -138,12 +141,16 @@ impl Config {
         pets_path.push(format!("pets{}.bin", lang_suffix));
         config.pets_file = pets_path;
 
+        let mut itemstats_path = data_dir.clone();
+        itemstats_path.push(format!("itemstats{}.bin", lang_suffix));
+        config.itemstats_file = itemstats_path;
+
         let mut legends_path = data_dir.clone();
         legends_path.push(format!("legends{}.bin", lang_suffix));
         config.legends_file = legends_path;
 
         if opt.reset_data {
-            for file in [&config.items_file, &config.skills_file, &config.traits_file, &config.specs_file, &config.professions_file, &config.pets_file, &config.legends_file] {
+            for file in [&config.items_file, &config.skills_file, &config.traits_file, &config.specs_file, &config.professions_file, &config.pets_file, &config.itemstats_file, &config.legends_file] {
 				if let Err(e) = remove_data_file(file) {
 					eprintln!("Failed to remove file {}: {}", file.display(), e);
 				}
@@ -199,6 +206,10 @@ struct Opt {
     /// Search for pets
     #[structopt(short = "P", long)]
     pet: bool,
+
+    /// Search for itemstats
+    #[structopt(short = "I", long)]
+    itemstat: bool,
 
     /// Search for legends
     #[structopt(short = "l", long)]
