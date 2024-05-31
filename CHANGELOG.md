@@ -1,3 +1,11 @@
+# Version 0.8.14-rc.1
+
+- Added Itemstats Attributes to see stats in json export
+
+# Version 0.8.13
+
+- Added itemstats endpoint
+
 # Version 0.8.12 (2024-05-27) - csv
 
 - Minor CSV format correction for double quotes in name field
