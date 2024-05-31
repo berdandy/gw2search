@@ -593,11 +593,28 @@ impl From<ApiPet> for Pet {
 
 // ------------------------------------------------------------
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ItemstatAttribute {
+    attribute: String,
+    multiplier: f32,
+	value: i32,
+}
+
+/*
+impl FormatRender for ItemstatAttribute {
+	fn pretty(&self) -> String  { format!("{}: x{} +{}", self.attribute, self.multiplier, self.value) }
+	fn id_only(&self) -> String { format!("{}", self.attribute) }
+	fn csv(&self) -> String     { format!("{},\"{}\"", self.attribute, self.name.replace("\"", "\"\"")) }
+	fn json(&self) -> String    { json!(self).to_string() }
+}
+*/
+
 // /v2/itemstats
 #[derive(Debug, Serialize, Deserialize, FormatRender)]
 pub struct Itemstat {
     pub id: u32,
     pub name: String,
+	pub attributes: Option<Vec<ItemstatAttribute>>,
 }
 
 #[derive(Debug, Serialize)]
@@ -613,12 +630,14 @@ impl<'de> Deserialize<'de> for ApiItemstat {
         struct ItemstatDeser {
             pub id: u32,
             pub name: String,
+			pub attributes: Option<Vec<ItemstatAttribute>>,
         }
 
         let itemstat = ItemstatDeser::deserialize(d)?;
         Ok(ApiItemstat(Itemstat {
             id: itemstat.id,
             name: itemstat.name,
+            attributes: itemstat.attributes,
         }))
     }
 }
@@ -628,6 +647,7 @@ impl From<ApiItemstat> for Itemstat {
         Itemstat {
             id: itemstat.0.id,
             name: itemstat.0.name,
+            attributes: itemstat.0.attributes,
         }
     }
 }
