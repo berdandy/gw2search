@@ -1,3 +1,7 @@
+# Version 0.9.0
+
+- Added --reset option to control cache refresh. E.g. "--reset --item" or "--reset --any"
+
 # Version 0.8.14-rc.1
 
 - Added Itemstats Attributes to see stats in json export

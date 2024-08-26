@@ -59,7 +59,7 @@ impl Config {
 
         let opt = Opt::from_args();
 
-        if ! opt.reset_data {
+        if ! (opt.reset_data || opt.reset) {
             config.any = opt.any;
             config.skill = opt.skill;
             config.r#trait = opt.r#trait;
@@ -82,8 +82,8 @@ impl Config {
             }
         }
 
-        config.lang = opt.lang;
-        config.search_term = opt.search_term;
+        config.lang = opt.lang.clone();
+        config.search_term = opt.search_term.clone();
 
         let file: ConfigFile = match get_file_config(&opt.config_file) {
             Ok(config) => config,
@@ -149,13 +149,29 @@ impl Config {
         legends_path.push(format!("legends{}.bin", lang_suffix));
         config.legends_file = legends_path;
 
-        if opt.reset_data {
+        if opt.reset_data || (opt.reset && opt.any) {
             for file in [&config.items_file, &config.skills_file, &config.traits_file, &config.specs_file, &config.professions_file, &config.pets_file, &config.itemstats_file, &config.legends_file] {
 				if let Err(e) = remove_data_file(file) {
 					eprintln!("Failed to remove file {}: {}", file.display(), e);
 				}
             }
-        }
+        } else if opt.reset {
+			let file = match opt {
+				opt if opt.skill => &config.skills_file,
+				opt if opt.r#trait => &config.traits_file,
+				opt if opt.item => &config.items_file,
+				opt if opt.spec => &config.specs_file,
+				opt if opt.elite_spec => &config.specs_file,
+				opt if opt.profession => &config.professions_file,
+				opt if opt.pet => &config.pets_file,
+				opt if opt.itemstat => &config.itemstats_file,
+				opt if opt.legend => &config.legends_file,
+				_ => panic!()
+			};
+			if let Err(e) = remove_data_file(file) {
+				eprintln!("Failed to remove file {}: {}", file.display(), e);
+			}
+		}
 
         config
     }
@@ -234,7 +250,11 @@ struct Opt {
     /// Search for this
     search_term: Option<String>,
 
-    /// Download content from the GW2 API, replacing any previously cached content
+    /// Remove cached content from the GW2 API. Search type flag is required
+    #[structopt(long)]
+    reset: bool,
+
+    /// Remove all cached content from the GW2 API
     #[structopt(long)]
     reset_data: bool,
 
@@ -282,7 +302,7 @@ The default file location is '{}'."#,
     )
 });
 
-#[derive(Debug, EnumString, EnumVariantNames)]
+#[derive(Debug, Clone, EnumString, EnumVariantNames)]
 pub enum Language {
     #[strum(serialize = "en")]
     English,
