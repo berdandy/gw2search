@@ -402,14 +402,28 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 			}
 
 			let mut results: Vec<String> = vec![];
-			results.extend(api_filter!(skills, search_term, in_reverse, " [SKILL]"));
-			results.extend(api_filter!(traits, search_term, in_reverse, " [TRAIT]"));
-			results.extend(api_filter!(items, search_term, in_reverse, " [ITEM]"));
-			results.extend(api_filter!(professions, search_term, in_reverse, " [PROFESSION]"));
-			results.extend(api_filter!(specs, search_term, in_reverse, " [SPECIALIZATION]"));
-			results.extend(api_filter!(pets, search_term, in_reverse, " [PET]"));
-			results.extend(api_filter!(itemstats, search_term, in_reverse, " [ITEMSTAT]"));
-			results.extend(api_filter!(legends, search_term, in_reverse, " [LEGEND]"));
+            if CONFIG.superquiet
+            {
+                results.extend(api_filter!(skills, search_term, in_reverse));
+                results.extend(api_filter!(traits, search_term, in_reverse));
+                results.extend(api_filter!(items, search_term, in_reverse));
+                results.extend(api_filter!(professions, search_term, in_reverse));
+                results.extend(api_filter!(specs, search_term, in_reverse));
+                results.extend(api_filter!(pets, search_term, in_reverse));
+                results.extend(api_filter!(itemstats, search_term, in_reverse));
+                results.extend(api_filter!(legends, search_term, in_reverse));
+            }
+            else
+            {
+                results.extend(api_filter!(skills, search_term, in_reverse, " [SKILL]"));
+                results.extend(api_filter!(traits, search_term, in_reverse, " [TRAIT]"));
+                results.extend(api_filter!(items, search_term, in_reverse, " [ITEM]"));
+                results.extend(api_filter!(professions, search_term, in_reverse, " [PROFESSION]"));
+                results.extend(api_filter!(specs, search_term, in_reverse, " [SPECIALIZATION]"));
+                results.extend(api_filter!(pets, search_term, in_reverse, " [PET]"));
+                results.extend(api_filter!(itemstats, search_term, in_reverse, " [ITEMSTAT]"));
+                results.extend(api_filter!(legends, search_term, in_reverse, " [LEGEND]"));
+            }
 
 			Ok(results)
 		}

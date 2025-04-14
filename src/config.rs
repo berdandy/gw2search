@@ -29,6 +29,7 @@ pub struct Config {
 	pub legend: bool,
 
 	pub quiet: bool,
+	pub superquiet: bool, // implies quiet
 	pub csv: bool,
 	pub json: bool,
 
@@ -71,7 +72,8 @@ impl Config {
             config.itemstat = opt.itemstat;
             config.legend = opt.legend;
             config.reverse = opt.reverse;
-            config.quiet = opt.quiet;
+            config.quiet = opt.quiet || opt.superquiet;
+            config.superquiet = opt.superquiet;
             config.csv = opt.csv;
             config.json = opt.json;
 
@@ -238,6 +240,10 @@ struct Opt {
 	/// Only print id number results upon match
 	#[structopt(short = "q", long)]
 	quiet: bool,
+
+    /// Do not print category annotation on --any searches (implies --quiet)
+	#[structopt(short = "Q", long)]
+	superquiet: bool,
 
 	/// Print results as csv-formatted data
 	#[structopt(short = "c", long)]
