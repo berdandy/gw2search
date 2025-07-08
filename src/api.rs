@@ -519,7 +519,6 @@ pub struct Profession {
     pub id: String,
     pub name: String,
     pub skills_by_palette: Vec<Vec<u32>>,
-
     pub weapons: HashMap<String, ProfWeapon>,
 }
 
