@@ -35,7 +35,7 @@ phf = { version = "0.10.1", features = ["macros"] }
 lazy_static = "1.4.0"
 strum = { version = "0.24.1", features = ["derive"] }
 iced = "0.4.2"
-format_render = { path = "format_render" }
+format_render = { version = "0.1.0", path = "format_render" }
 
 # The profile that 'cargo dist' will build with
 [profile.dist]
