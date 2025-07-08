@@ -124,6 +124,30 @@ Note: API data is cached. Refresh it with --reset-data
 <!-- next-url -->
 [Unreleased]: https://github.com/assert-rs/predicates-rs/compare/v0.9.0...HEAD
 
+## 0.9.2 (2025-07-07)
+
+### Bug Fixes
+
+ - <csr-id-f31e325af81328af57df308037f6539c73287695/> spurious change to make build work
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 1 commit contributed to the release.
+ - 1 commit was understood as [conventional](https://www.conventionalcommits.org).
+ - 0 issues like '(#ID)' were seen in commit messages
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **Uncategorized**
+    - Spurious change to make build work ([`f31e325`](https://github.com/berdandy/gw2search/commit/f31e325af81328af57df308037f6539c73287695))
+</details>
+
 ## 0.9.1 (2025-07-07)
 
 ### New Features
