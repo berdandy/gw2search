@@ -5,7 +5,6 @@ description = "Searches in the gw2 api. Supports items, skills, traits, speciali
 edition = "2021"
 authors = ["Andy Berdan <andy@berdan.ca>"]
 repository = "https://github.com/berdandy/gw2search"
-publish = false
 
 [package.metadata.wix]
 upgrade-guid = "BB788C03-44C7-4632-9D06-50CD34D6556A"
