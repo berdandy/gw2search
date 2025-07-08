@@ -503,12 +503,24 @@ impl From<ApiSpec> for Spec {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WeaponSkill {
+    pub id: u32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProfWeapon {
+    pub skills: Vec<WeaponSkill>,
+}
+
 // /v2/professions
 #[derive(Debug, Serialize, Deserialize, FormatRender)]
 pub struct Profession {
     pub id: String,
     pub name: String,
     pub skills_by_palette: Vec<Vec<u32>>,
+
+    pub weapons: HashMap<String, ProfWeapon>,
 }
 
 #[derive(Debug, Serialize)]
@@ -525,6 +537,7 @@ impl<'de> Deserialize<'de> for ApiProfession {
             pub id: String,
             pub name: String,
             pub skills_by_palette: Vec<Vec<u32>>,
+            pub weapons: HashMap<String, ProfWeapon>,
         }
 
         let spec = ProfessionDeser::deserialize(d)?;
@@ -532,6 +545,7 @@ impl<'de> Deserialize<'de> for ApiProfession {
             id: spec.id,
             name: spec.name,
             skills_by_palette: spec.skills_by_palette,
+            weapons: spec.weapons,
         }))
     }
 }
@@ -542,6 +556,7 @@ impl From<ApiProfession> for Profession {
             id: spec.0.id,
             name: spec.0.name,
             skills_by_palette: spec.0.skills_by_palette,
+            weapons: spec.0.weapons,
         }
     }
 }
