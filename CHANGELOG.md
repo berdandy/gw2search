@@ -124,7 +124,7 @@ Note: API data is cached. Refresh it with --reset-data
 <!-- next-url -->
 [Unreleased]: https://github.com/assert-rs/predicates-rs/compare/v0.9.0...HEAD
 
-## Unreleased
+## 0.9.1 (2025-07-07)
 
 ### New Features
 
@@ -412,6 +412,8 @@ Note: API data is cached. Refresh it with --reset-data
 </details>
 
 ## v0.7.2 (2024-03-20)
+
+<csr-id-2365421f2fb3897ac40bbb973d8200a84dd523c9/>
 
 ### Chore
 

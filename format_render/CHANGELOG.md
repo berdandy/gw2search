@@ -5,14 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 0.1.0 (2025-07-07)
+
+### Chore
+
+ - <csr-id-c903e9fc45b4160e154a1cf48dee5f0c15df0f7b/> changelog
 
 ### Commit Statistics
 
 <csr-read-only-do-not-edit/>
 
- - 5 commits contributed to the release over the course of 464 calendar days.
- - 0 commits were understood as [conventional](https://www.conventionalcommits.org).
+ - 6 commits contributed to the release over the course of 464 calendar days.
+ - 1 commit was understood as [conventional](https://www.conventionalcommits.org).
  - 0 issues like '(#ID)' were seen in commit messages
 
 ### Commit Details
@@ -22,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details><summary>view details</summary>
 
  * **Uncategorized**
+    - Changelog ([`c903e9f`](https://github.com/berdandy/gw2search/commit/c903e9fc45b4160e154a1cf48dee5f0c15df0f7b))
     - Added changelog to make smart-release happy ([`a034527`](https://github.com/berdandy/gw2search/commit/a0345274ab6b2c876fcbb25c5df64ff9dcd639a6))
     - Fixed quoting of double quotes in csv format ([`3934893`](https://github.com/berdandy/gw2search/commit/3934893283817ec1692b71a2577c12ea7e8a4e6d))
     - Added pet icon to model ([`d2d7aa4`](https://github.com/berdandy/gw2search/commit/d2d7aa494c88a6849729a1ececabb15e2e91e078))
