@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Added --reset option to control cache refresh. E.g. "--reset --item" or "--reset --any"
+- Added weapon skill output for professions
 
 ## [0.8.14-rc.1]
 
