@@ -57,16 +57,16 @@ OPTIONS:
         --cache-dir <cache-dir>        Save cached API calls to this directory
 
                                        If provided, the parent directory of the cache directory must already exist.
-                                       Defaults to '/home/andy/.cache/gw2search'.
+                                       Defaults to '/home/<USERNAME>/.cache/gw2search'.
         --config-file <config-file>    Read config options from this file. Supported options:
 
                                            lang = "<lang>"
 
-                                       The default file location is '/home/andy/.config/gw2search/gw2search.toml'.
+                                       The default file location is '/home/<USERNAME>/.config/gw2search/gw2search.toml'.
         --data-dir <data-dir>          Save cached items and other content to this directory
 
                                        If provided, the parent directory of the cache directory must already exist.
-                                       Defaults to '/home/andy/.local/share/gw2search'.
+                                       Defaults to '/home/<USERNAME>/.local/share/gw2search'.
         --lang <lang>                  One of "en", "es", "de", or "fr". Defaults to "en"
 
 ARGS:
