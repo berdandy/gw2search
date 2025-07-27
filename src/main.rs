@@ -2,15 +2,18 @@ mod api;
 mod config;
 mod request;
 
-use iced::{
-    button, scrollable, text_input, pick_list, Alignment, Button, Column, Element, Color,
-	PickList, Row, Rule, Sandbox, Scrollable, Settings, Text, TextInput, Checkbox
-};
-
 use config::CONFIG;
 use std::env;
 use std::io;
 use std::io::Write;
+
+use iced::{
+	Settings, Element, Alignment, Color
+};
+use iced::widget::{
+	Column, Text, Rule, Row, TextInput, Button, PickList, Checkbox, Scrollable,
+	scrollable, text_input, pick_list, button, column, text,
+};
 
 use crate::api::result_render;
 
@@ -77,55 +80,6 @@ macro_rules! api_searcher {
 	}
 }
 
-pub fn main() -> iced::Result {
-    let argc = env::args().count();
-    if argc > 1 {
-        let mode : SearchMode = match &CONFIG {
-            cfg if cfg.any => SearchMode::Any,
-            cfg if cfg.skill => SearchMode::Skill,
-            cfg if cfg.item => SearchMode::Item,
-            cfg if cfg.r#trait => SearchMode::Trait,
-            cfg if cfg.spec => SearchMode::Spec,
-            cfg if cfg.elite_spec => SearchMode::EliteSpec,
-            cfg if cfg.profession => SearchMode::Profession,
-            cfg if cfg.pet => SearchMode::Pet,
-            cfg if cfg.itemstat => SearchMode::Itemstat,
-            cfg if cfg.legend => SearchMode::Legend,
-            _ => SearchMode::Skip,
-        };
-
-        if mode != SearchMode::Skip {
-            let term = match &CONFIG.search_term {
-                Some(term) => term.clone(),
-                _ => String::from(""),
-            };
-            let results = match search_api(mode, term, CONFIG.reverse) {
-                Ok(results) => results,
-                Err(e) => panic!("error searching with commandline search: {}", e),
-            };
-			let sep = match CONFIG.quiet || CONFIG.json {
-				true => ",",
-				false => "\n",
-			};
-	
-			if CONFIG.quiet {
-				// no trailing newline
-				print!("{}", results.join(sep));
-				io::stdout().flush().unwrap();
-			} else if CONFIG.csv {
-				println!("id,name\n{}", results.join(sep));
-			} else if CONFIG.json {
-				println!("[{}]", results.join(sep));
-			} else {
-				println!("{}", results.join(sep));
-			}
-        }
-        Ok(())
-    } else {
-        Gw2Search::run(Settings::default())
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[derive(Default)]
 pub enum SearchMode {
@@ -180,6 +134,105 @@ impl std::fmt::Display for SearchMode {
     }
 }
 
+pub fn main() -> iced::Result {
+    let argc = env::args().count();
+    if argc > 1 {
+        let mode : SearchMode = match &CONFIG {
+            cfg if cfg.any => SearchMode::Any,
+            cfg if cfg.skill => SearchMode::Skill,
+            cfg if cfg.item => SearchMode::Item,
+            cfg if cfg.r#trait => SearchMode::Trait,
+            cfg if cfg.spec => SearchMode::Spec,
+            cfg if cfg.elite_spec => SearchMode::EliteSpec,
+            cfg if cfg.profession => SearchMode::Profession,
+            cfg if cfg.pet => SearchMode::Pet,
+            cfg if cfg.itemstat => SearchMode::Itemstat,
+            cfg if cfg.legend => SearchMode::Legend,
+            _ => SearchMode::Skip,
+        };
+
+        if mode != SearchMode::Skip {
+            let term = match &CONFIG.search_term {
+                Some(term) => term.clone(),
+                _ => String::from(""),
+            };
+            let results = match search_api(mode, term, CONFIG.reverse) {
+                Ok(results) => results,
+                Err(e) => panic!("error searching with commandline search: {}", e),
+            };
+			let sep = match CONFIG.quiet || CONFIG.json {
+				true => ",",
+				false => "\n",
+			};
+	
+			if CONFIG.quiet {
+				// no trailing newline
+				print!("{}", results.join(sep));
+				io::stdout().flush().unwrap();
+			} else if CONFIG.csv {
+				println!("id,name\n{}", results.join(sep));
+			} else if CONFIG.json {
+				println!("[{}]", results.join(sep));
+			} else {
+				println!("{}", results.join(sep));
+			}
+        }
+        Ok(())
+    } else {
+		iced::run("GW2 Search", Gw2Search::update, Gw2Search::view)
+    }
+}
+
+// state
+struct Gw2Search {
+    search_term: String,
+	results: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+enum Message {
+	Search,
+}
+
+impl Default for Gw2Search {
+	fn default() -> Self {
+		Gw2Search {
+			search_term: String::from("shroud"),
+			results: vec!(),
+		}
+	}
+}
+
+impl Gw2Search {
+	fn new() -> Self {
+		Self::default()
+	}
+
+	pub fn update(&mut self, message: Message) {
+		match message {
+			Message::Search => {
+//				match search_api(self.search_mode, self.search_term.clone(), self.reverse) {
+				match search_api(SearchMode::Skill, self.search_term.clone(), false) {
+					Ok(results) => {
+						self.results = results;
+					}
+					Err(error) => panic!("Problem with search {:?}", error)
+				}
+			}
+		}
+	}
+
+	pub fn view(&self) -> Column<Message> {
+		column![
+			text(self.search_term.clone()).size(50),
+			button("search").on_press(Message::Search)
+		]
+	}
+}
+
+
+/*
+
 #[derive(Default)]
 struct Gw2Search {
     scroll: scrollable::State,
@@ -202,15 +255,11 @@ enum Message {
 	DeleteData,
 }
 
-impl Sandbox for Gw2Search {
+impl Gw2Search {
     type Message = Message;
 
 	fn new() -> Self {
 		Self::default()
-	}
-
-	fn title(&self) -> String {
-		String::from("Gw2Search")
 	}
 
 	fn update(&mut self, message: Message)
@@ -312,6 +361,7 @@ impl Sandbox for Gw2Search {
 			.into()
 		}
 }
+*/
 
 #[tokio::main]
 async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bool) -> Result<Vec<String>, Box<dyn std::error::Error>> {
