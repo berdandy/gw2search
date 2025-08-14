@@ -192,6 +192,7 @@ struct Gw2Search {
 #[derive(Debug, Clone)]
 enum Message {
 	Search,
+	SearchTermChanged(String),
 }
 
 impl Default for Gw2Search {
@@ -218,15 +219,32 @@ impl Gw2Search {
 					}
 					Err(error) => panic!("Problem with search {:?}", error)
 				}
+			},
+			Message::SearchTermChanged(term) => {
+				self.search_term = term;
 			}
 		}
 	}
 
-	pub fn view(&self) -> Column<Message> {
-		column![
-			text(self.search_term.clone()).size(50),
-			button("search").on_press(Message::Search)
-		]
+	pub fn view(&self) -> Element<Message> {
+		let results = self.results.iter().fold(
+			Column::new().spacing(10).push(Text::new("")),
+			|column: Column<Message>, result| {
+				column.push(
+					TextInput::new("Result", result)
+				)
+			}
+		);
+		scrollable(
+			column![
+				text_input("Search Term", &self.search_term.clone())
+					.on_input(|s| Message::SearchTermChanged(s))
+					.size(50),
+				button("search").on_press(Message::Search),
+
+				scrollable(results)
+			]
+		).into()
 	}
 }
 
