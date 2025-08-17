@@ -12,7 +12,7 @@ use iced::{
 };
 use iced::widget::{
 	Column, Text, Rule, Row, TextInput, Button, PickList, Checkbox, Scrollable,
-	scrollable, text_input, pick_list, button, column, text,
+	scrollable, text_input, pick_list, button, column, row, text, horizontal_rule, checkbox,
 };
 
 use crate::api::result_render;
@@ -186,6 +186,8 @@ pub fn main() -> iced::Result {
 // state
 struct Gw2Search {
     search_term: String,
+	search_mode: Option<SearchMode>,
+	reverse: bool,
 	results: Vec<String>,
 }
 
@@ -193,13 +195,18 @@ struct Gw2Search {
 enum Message {
 	Search,
 	SearchTermChanged(String),
+	SearchModeSelected(SearchMode),
+	ReverseSearchChanged(bool),
+	DeleteData,
 }
 
 impl Default for Gw2Search {
 	fn default() -> Self {
 		Gw2Search {
-			search_term: String::from("shroud"),
+			search_term: String::default(),
 			results: vec!(),
+			reverse: false,
+			search_mode: Some(SearchMode::Item),
 		}
 	}
 }
@@ -209,19 +216,38 @@ impl Gw2Search {
 		Self::default()
 	}
 
+	fn search_to_results(&mut self) {
+		if let Some(mode) = self.search_mode {
+			match search_api(mode, self.search_term.clone(), self.reverse) {
+				Ok(results) => {
+					self.results = results;
+				}
+				Err(error) => panic!("Problem with search {:?}", error)
+			}
+		}
+	}
+
 	pub fn update(&mut self, message: Message) {
 		match message {
 			Message::Search => {
-//				match search_api(self.search_mode, self.search_term.clone(), self.reverse) {
-				match search_api(SearchMode::Skill, self.search_term.clone(), false) {
-					Ok(results) => {
-						self.results = results;
-					}
-					Err(error) => panic!("Problem with search {:?}", error)
-				}
-			},
+				self.search_to_results();
+			}
 			Message::SearchTermChanged(term) => {
 				self.search_term = term;
+			}
+			Message::SearchModeSelected(search_mode) => {
+				self.search_mode = Some(search_mode);
+				self.search_to_results();
+			}
+			Message::ReverseSearchChanged(reverse_search) => {
+				self.reverse = reverse_search;
+			}
+			Message::DeleteData => {
+				for file in [&CONFIG.items_file, &CONFIG.skills_file, &CONFIG.traits_file, &CONFIG.specs_file, &CONFIG.professions_file, &CONFIG.pets_file, &CONFIG.legends_file] {
+					if let Err(e) = config::remove_data_file(file) {
+						eprintln!("Failed to remove file {}: {}", file.display(), e);
+					}
+				}
 			}
 		}
 	}
@@ -237,149 +263,35 @@ impl Gw2Search {
 		);
 		scrollable(
 			column![
-				text_input("Search Term", &self.search_term.clone())
-					.on_input(|s| Message::SearchTermChanged(s))
-					.size(50),
-				button("search").on_press(Message::Search),
-
+				text("gw2search").size(32),
+				horizontal_rule(30),
+				row![
+					text_input("Search Term", &self.search_term)
+						.on_input(|s| Message::SearchTermChanged(s))
+						.size(40),
+					column![
+						row![
+							button("SEARCH").on_press(Message::Search),
+							pick_list(
+								&SearchMode::ALL[..],
+								self.search_mode,
+								Message::SearchModeSelected,
+							),
+							checkbox("Reverse", self.reverse).on_toggle(Message::ReverseSearchChanged),
+						],
+						button("Delete API Cache")
+							.style(button::danger)
+							.on_press(Message::DeleteData),
+					]
+				],
 				scrollable(results)
 			]
+			.spacing(8)
+			.padding(8)
+			.align_x(Alignment::Center)
 		).into()
 	}
 }
-
-
-/*
-
-#[derive(Default)]
-struct Gw2Search {
-    scroll: scrollable::State,
-    input: text_input::State,
-	pick_list: pick_list::State<SearchMode>,
-	search_mode: SearchMode,
-    search_term: String,
-    reverse: bool,
-	results: Vec<String>,
-	search_button: button::State,
-	delete_button: button::State,
-}
-
-#[derive(Debug, Clone)]
-enum Message {
-	Search,
-	SearchTermChanged(String),
-	SearchModeSelected(SearchMode),
-	ReverseSearchChanged(bool),
-	DeleteData,
-}
-
-impl Gw2Search {
-    type Message = Message;
-
-	fn new() -> Self {
-		Self::default()
-	}
-
-	fn update(&mut self, message: Message)
-	{
-		match message {
-			Message::SearchTermChanged(term) => {
-				self.search_term = term;
-			}
-			Message::SearchModeSelected(search_mode) => {
-				self.search_mode = search_mode;
-
-				if ! self.search_term.is_empty() {
-					match search_api(self.search_mode, self.search_term.clone(), self.reverse) {
-						Ok(results) => {
-							self.results = results;
-						}
-						Err(error) => panic!("Problem with search {:?}", error)
-					}
-				}
-			}
-			Message::ReverseSearchChanged(reverse_search) => {
-				self.reverse = reverse_search;
-			}
-			Message::Search => {
-				match search_api(self.search_mode, self.search_term.clone(), self.reverse) {
-					Ok(results) => {
-						self.results = results;
-					}
-					Err(error) => panic!("Problem with search {:?}", error)
-				}
-			}
-			Message::DeleteData => {
-				for file in [&CONFIG.items_file, &CONFIG.skills_file, &CONFIG.traits_file, &CONFIG.specs_file, &CONFIG.professions_file, &CONFIG.pets_file, &CONFIG.legends_file] {
-					if let Err(e) = config::remove_data_file(file) {
-						eprintln!("Failed to remove file {}: {}", file.display(), e);
-					}
-				}
-			}
-		}
-	}
-
-	fn view(&mut self) -> Element<Self::Message> {
-
-		let results = self.results.iter().fold(
-            Column::new().spacing(10).push(Text::new("")),
-            |column: Column<Message>, result| {
-                column.push(
-					Text::new(result)
-                )
-            },
-        );
-
-		Column::new()
-            .spacing(8)
-			.padding(8)
-			.align_items(Alignment::Center)
-            .push(Text::new("gw2search").size(32))
-            .push(Rule::horizontal(30))
-            .push(
-				Row::new()
-				.push(TextInput::new(
-						&mut self.input,
-						"Search Term",
-						&self.search_term,
-						Message::SearchTermChanged
-					).on_submit(Message::Search)
-				)
-				.push(Button::new(&mut self.search_button, Text::new("Search"))
-					.on_press(Message::Search)
-				)
-				.push(
-					PickList::new(
-						&mut self.pick_list,
-						&SearchMode::ALL[..],
-						Some(self.search_mode),
-						Message::SearchModeSelected)
-				)
-				.push(
-					Checkbox::new(
-						self.reverse,
-						"Reverse",
-						Message::ReverseSearchChanged)
-				)
-			)
-			.push(Button::new(&mut self.delete_button, Text::new("Delete Data Files"))
-				.on_press(Message::DeleteData)
-			)
-			.push(Text::new("Input search term."))
-			.push(Text::new("Delete Data Files to clear permanently cached results")
-				.size(12)
-				.color(Color::from_rgb8(0xDD, 0x22, 0x22))
-			)
-			.push(Text::new("made by berdandy.1968").size(12))
-			.push(
-				Scrollable::new(&mut self.scroll)
-					.padding(50)
-					.push(results)
-			)
-			.into()
-		}
-}
-*/
 
 #[tokio::main]
 async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bool) -> Result<Vec<String>, Box<dyn std::error::Error>> {

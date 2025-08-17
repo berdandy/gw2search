@@ -79,7 +79,7 @@ impl Config {
 
             // default (but only when not resetting data)
             if ! (config.any || config.skill || config.r#trait || config.item || config.spec || config.elite_spec || config.profession || config.pet || config.itemstat || config.legend) {
-                eprintln!("no search type; assuming default item search");
+                // eprintln!("no search type; assuming default item search");
                 config.item = true;
             }
         }
