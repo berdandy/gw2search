@@ -124,6 +124,37 @@ Note: API data is cached. Refresh it with --reset-data
 <!-- next-url -->
 [Unreleased]: https://github.com/assert-rs/predicates-rs/compare/v0.9.0...HEAD
 
+## 0.10.0 (2025-08-17)
+
+### Other
+
+ - <csr-id-876b5c037ec526ccabc384b3579c7fd31667f893/> some styling attempts
+ - <csr-id-83c22e0934d10fbe4232c9e0d04e7b34689960eb/> upgrading iced to v0.13.1. LOTS of breaking changes
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 6 commits contributed to the release over the course of 20 calendar days.
+ - 40 days passed between releases.
+ - 2 commits were understood as [conventional](https://www.conventionalcommits.org).
+ - 0 issues like '(#ID)' were seen in commit messages
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **Uncategorized**
+    - Tidy ([`e9796a5`](https://github.com/berdandy/gw2search/commit/e9796a5614c9708203ac6c3cc56c7490a8a51dfa))
+    - Corrected style so results don't look disabled ([`1a57954`](https://github.com/berdandy/gw2search/commit/1a57954554e2f3f053ff6b884f114b4d434f78da))
+    - Some styling attempts ([`876b5c0`](https://github.com/berdandy/gw2search/commit/876b5c037ec526ccabc384b3579c7fd31667f893))
+    - Implemented remaining functionality ([`cf2bcbd`](https://github.com/berdandy/gw2search/commit/cf2bcbded5287ad5295f9d56b03d2c73a939a6d8))
+    - Added search term editing, and copy-pastable results ([`2997db3`](https://github.com/berdandy/gw2search/commit/2997db3466975677463ba9bc68cbb44a2c325129))
+    - Upgrading iced to v0.13.1. LOTS of breaking changes ([`83c22e0`](https://github.com/berdandy/gw2search/commit/83c22e0934d10fbe4232c9e0d04e7b34689960eb))
+</details>
+
 ## 0.9.2 (2025-07-07)
 
 ### Bug Fixes
