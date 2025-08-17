@@ -8,11 +8,11 @@ use std::io;
 use std::io::Write;
 
 use iced::{
-	Settings, Element, Alignment, Color
-};
-use iced::widget::{
-	Column, Text, Rule, Row, TextInput, Button, PickList, Checkbox, Scrollable,
-	scrollable, text_input, pick_list, button, column, row, text, horizontal_rule, checkbox,
+	Element, Alignment, Color, Background, Border, Theme,
+    widget::{
+        Column, Text, TextInput,
+        scrollable, text_input, pick_list, button, column, row, text, horizontal_rule, checkbox,
+    }
 };
 
 use crate::api::result_render;
@@ -212,10 +212,6 @@ impl Default for Gw2Search {
 }
 
 impl Gw2Search {
-	fn new() -> Self {
-		Self::default()
-	}
-
 	fn search_to_results(&mut self) {
 		if let Some(mode) = self.search_mode {
 			match search_api(mode, self.search_term.clone(), self.reverse) {
@@ -252,12 +248,33 @@ impl Gw2Search {
 		}
 	}
 
+    /*
+    fn faux_text(theme: &Theme, status: Status) -> Style {
+        let palette = theme.extended_palette();
+
+        TextInput::Style {
+            background: Background::Color(palette.background.base.color),
+            border: Border {
+                radius: 2.0.into(),
+                width: 1.0,
+                color: palette.background.strong.color,
+            },
+            icon: palette.background.weak.text,
+            placeholder: palette.secondary.base.color,
+            value: palette.background.base.text,
+            selection: palette.primary.weak.color,
+        }
+    }
+    */
+
 	pub fn view(&self) -> Element<Message> {
 		let results = self.results.iter().fold(
-			Column::new().spacing(10).push(Text::new("")),
+			Column::new().push(Text::new("")),
 			|column: Column<Message>, result| {
 				column.push(
+					// Text::new(result) // looks good
 					TextInput::new("Result", result)
+                        //.style(Self::faux_text)
 				)
 			}
 		);
