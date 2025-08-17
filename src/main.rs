@@ -8,7 +8,7 @@ use std::io;
 use std::io::Write;
 
 use iced::{
-	Element, Alignment, Color, Background, Border, Theme,
+	Element, Alignment, Background, Border, Theme,
     widget::{
         Column, Text, TextInput,
         scrollable, text_input, pick_list, button, column, row, text, horizontal_rule, checkbox,
