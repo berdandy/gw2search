@@ -126,6 +126,9 @@ Note: API data is cached. Refresh it with --reset-data
 
 ## 0.10.0 (2025-08-17)
 
+<csr-id-876b5c037ec526ccabc384b3579c7fd31667f893/>
+<csr-id-83c22e0934d10fbe4232c9e0d04e7b34689960eb/>
+
 ### Other
 
  - <csr-id-876b5c037ec526ccabc384b3579c7fd31667f893/> some styling attempts
