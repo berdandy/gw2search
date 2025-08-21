@@ -124,6 +124,31 @@ Note: API data is cached. Refresh it with --reset-data
 <!-- next-url -->
 [Unreleased]: https://github.com/assert-rs/predicates-rs/compare/v0.9.0...HEAD
 
+## 0.10.1 (2025-08-21)
+
+### New Features
+
+ - <csr-id-2161b4db3b19c2f8b31f927154fa1a2db52fec7b/> search on Enter key
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 1 commit contributed to the release.
+ - 4 days passed between releases.
+ - 1 commit was understood as [conventional](https://www.conventionalcommits.org).
+ - 0 issues like '(#ID)' were seen in commit messages
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **Uncategorized**
+    - Search on Enter key ([`2161b4d`](https://github.com/berdandy/gw2search/commit/2161b4db3b19c2f8b31f927154fa1a2db52fec7b))
+</details>
+
 ## 0.10.0 (2025-08-17)
 
 <csr-id-876b5c037ec526ccabc384b3579c7fd31667f893/>
