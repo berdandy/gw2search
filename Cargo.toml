@@ -36,6 +36,7 @@ lazy_static = "1.4.0"
 strum = { version = "0.24.1", features = ["derive"] }
 iced = "0.13.1"
 format_render = { version = "0.1.0", path = "format_render" }
+iced_aw = { version = "0.12.2", features = ["card"] }
 
 # The profile that 'cargo dist' will build with
 [profile.dist]

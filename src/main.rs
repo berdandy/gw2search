@@ -14,6 +14,7 @@ use iced::{
         scrollable, text_input, pick_list, button, column, row, text, horizontal_rule, checkbox,
     }
 };
+use iced_aw::helpers::card;
 
 use crate::api::result_render;
 
@@ -189,6 +190,7 @@ struct Gw2Search {
 	search_mode: Option<SearchMode>,
 	reverse: bool,
 	results: Vec<String>,
+    progress_open: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -198,6 +200,8 @@ enum Message {
 	SearchModeSelected(SearchMode),
 	ReverseSearchChanged(bool),
 	DeleteData,
+    CloseProgress,
+    OpenProgress,
 }
 
 impl Default for Gw2Search {
@@ -207,6 +211,7 @@ impl Default for Gw2Search {
 			results: vec!(),
 			reverse: false,
 			search_mode: Some(SearchMode::Item),
+            progress_open: false,
 		}
 	}
 }
@@ -225,6 +230,9 @@ impl Gw2Search {
 
 	pub fn update(&mut self, message: Message) {
 		match message {
+            Message::CloseProgress | Message::OpenProgress => {
+                self.progress_open = !self.progress_open;
+            }
 			Message::Search => {
 				self.search_to_results();
 			}
@@ -249,59 +257,61 @@ impl Gw2Search {
 	}
 
 	pub fn view(&self) -> Element<Message> {
-		let results = self.results.iter().fold(
-			Column::new().push(Text::new("")),
-			|column: Column<Message>, result| {
-				column.push(
-					// Text::new(result) // looks good
-					TextInput::new("Result", result).style(|theme: &Theme, _| {
-                        let palette = theme.extended_palette();
-                        crate::text_input::Style 
-                        {
-                            background: Background::Color(palette.background.base.color),
-                            border: Border {
-                                radius: 2.0.into(),
-                                width: 1.0,
-                                color: palette.background.strong.color,
-                            },
-                            icon: palette.background.weak.text,
-                            placeholder: palette.secondary.base.color,
-                            value: palette.background.base.text,
-                            selection: palette.primary.weak.color,
-                        }
-                    })
-				)
-			}
-		);
-		scrollable(
-			column![
-				text("gw2search").size(32),
-				horizontal_rule(30),
-				row![
-					text_input("Search Term", &self.search_term)
-						.on_input(|s| Message::SearchTermChanged(s))
-						.size(40),
-					column![
-						row![
-							button("SEARCH").on_press(Message::Search),
-							pick_list(
-								&SearchMode::ALL[..],
-								self.search_mode,
-								Message::SearchModeSelected,
-							),
-							checkbox("Reverse", self.reverse).on_toggle(Message::ReverseSearchChanged),
-						],
-						button("Delete API Cache")
-							.style(button::danger)
-							.on_press(Message::DeleteData),
-					]
-				],
-				scrollable(results)
-			]
-			.spacing(8)
-			.padding(12)
-			.align_x(Alignment::Center)
-		).into()
+        if self.progress_open {
+            card(
+                text("API Download Progress"),
+                column![
+                    text(" ... TODO ... ")
+                ]
+            ).on_close(Message::CloseProgress).into()
+        } else {
+            let results = self.results.iter().fold(
+                Column::new().push(Text::new("")),
+                |column: Column<Message>, result| {
+                    column.push(
+                        // Text::new(result) // looks good
+                        TextInput::new("Result", result).style(|theme: &Theme, _| {
+                            let palette = theme.extended_palette();
+                            text_input::Style 
+                            {
+                                background: Background::Color(palette.background.base.color),
+                                border: Border {
+                                    radius: 2.0.into(),
+                                    width: 1.0,
+                                    color: palette.background.strong.color,
+                                },
+                                icon: palette.background.weak.text,
+                                placeholder: palette.secondary.base.color,
+                                value: palette.background.base.text,
+                                selection: palette.primary.weak.color,
+                            }
+                        })
+                    )
+                }
+            );
+            scrollable(
+                column![
+                    text("gw2search").size(32),
+                    horizontal_rule(30),
+                    row![
+                        text_input("Search Term", &self.search_term).size(40).on_input(|s| Message::SearchTermChanged(s)),
+                        column![
+                            row![
+                                button("SEARCH").on_press(Message::Search),
+                                pick_list(&SearchMode::ALL[..], self.search_mode, Message::SearchModeSelected),
+                                checkbox("Reverse", self.reverse).on_toggle(Message::ReverseSearchChanged),
+                            ],
+                            button("Delete API Cache").style(button::danger).on_press(Message::DeleteData),
+                            button("TEST").on_press(Message::OpenProgress),
+                        ]
+                    ],
+                    scrollable(results)
+                ]
+                .spacing(8)
+                .padding(12)
+                .align_x(Alignment::Center)
+            ).into()
+        }
 	}
 }
 
