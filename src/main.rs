@@ -280,6 +280,7 @@ impl Gw2Search {
 				row![
 					text_input("Search Term", &self.search_term)
 						.on_input(|s| Message::SearchTermChanged(s))
+						.on_submit(Message::Search)
 						.size(40),
 					column![
 						row![
