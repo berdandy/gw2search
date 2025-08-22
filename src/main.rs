@@ -8,7 +8,7 @@ use std::io;
 use std::io::Write;
 
 use iced::{
-	Element, Alignment, Background, Border, Theme,
+	Element, Alignment, Background, Border, Theme, Task,
     widget::{
         Column, Text, TextInput,
         scrollable, text_input, pick_list, button, column, row, text, horizontal_rule, checkbox,
@@ -194,6 +194,7 @@ struct Gw2Search {
 #[derive(Debug, Clone)]
 enum Message {
 	Search,
+	SearchResultsUpdated(Vec<String>),
 	SearchTermChanged(String),
 	SearchModeSelected(SearchMode),
 	ReverseSearchChanged(bool),
@@ -223,27 +224,47 @@ impl Gw2Search {
 		}
 	}
 
-	pub fn update(&mut self, message: Message) {
-		match message {
-			Message::Search => {
-				self.search_to_results();
+	async fn asearch(&self) -> Vec<String> {
+		if let Some(mode) = self.search_mode {
+			match search_api(mode, self.search_term.clone(), self.reverse) {
+				Ok(results) => results,
+				Err(error) => panic!("Problem with search {:?}", error)
 			}
+		} else {
+            vec![]
+        }
+	}
+
+	pub fn update(&mut self, message: Message) -> Task<Message> {
+		match message {
+			Message::Search => Task::perform(
+                search_api(self.search_mode.unwrap(), self.search_term.clone(), self.reverse).unwrap(),
+                |x| Message::SearchResultsUpdated(x)
+            ),
+            Message::SearchResultsUpdated(results) => {
+                self.results = results;
+                Task::none()
+            },
 			Message::SearchTermChanged(term) => {
 				self.search_term = term;
-			}
+                Task::none()
+			},
 			Message::SearchModeSelected(search_mode) => {
 				self.search_mode = Some(search_mode);
 				self.search_to_results();
-			}
+                Task::none()
+			},
 			Message::ReverseSearchChanged(reverse_search) => {
 				self.reverse = reverse_search;
-			}
+                Task::none()
+			},
 			Message::DeleteData => {
 				for file in [&CONFIG.items_file, &CONFIG.skills_file, &CONFIG.traits_file, &CONFIG.specs_file, &CONFIG.professions_file, &CONFIG.pets_file, &CONFIG.legends_file] {
 					if let Err(e) = config::remove_data_file(file) {
 						eprintln!("Failed to remove file {}: {}", file.display(), e);
 					}
 				}
+                Task::none()
 			}
 		}
 	}
