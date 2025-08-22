@@ -15,8 +15,11 @@ use iced::{
     }
 };
 
+use tokio::task;
 use crate::api::result_render;
 
+/*
+// synchronous
 /// api_search!(api::ApiSkill, api::Skill, &CONFIG.skills_file, "skills") -> results
 macro_rules! api_search {
 	($api_type:ty, $type:ty, $file:expr, $endpoint:expr) => {
@@ -28,6 +31,23 @@ macro_rules! api_search {
 				.collect())
 		})
 		.await?
+	}
+}
+*/
+
+/// api_search_async!(api::ApiSkill, api::Skill, &CONFIG.skills_file, "skills") -> results
+macro_rules! api_search {
+	($api_type:ty, $type:ty, $file:expr, $endpoint:expr) => {
+		task::spawn(async move {
+			request::get_data($file, || async {
+				let api_results: Vec<$api_type> = request::request_paginated($endpoint, &CONFIG.lang).await?;
+				Ok(api_results
+					.into_iter()
+					.map(|api_result| <$type>::from(api_result))
+					.collect())
+			})
+			.await.unwrap()
+		}).await?
 	}
 }
 
@@ -307,7 +327,7 @@ impl Gw2Search {
 }
 
 #[tokio::main]
-async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bool) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bool) -> Result<Vec<String>, Box<dyn std::error::Error + Send + Sync>> {
 	match search_mode {
         SearchMode::Skip => {
             Ok(vec![])

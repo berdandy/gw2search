@@ -23,11 +23,11 @@ const API_VERSION: &str = "2024-03-25T00:00:00Z";
 pub async fn get_data<T, Fut>(
     data_path: impl AsRef<Path>,
     getter: impl FnOnce() -> Fut,
-) -> Result<Vec<T>, Box<dyn std::error::Error>>
+) -> Result<Vec<T>, Box<dyn std::error::Error + Send + Sync>>
 where
     T: serde::Serialize,
     T: serde::de::DeserializeOwned,
-    Fut: Future<Output = Result<Vec<T>, Box<dyn std::error::Error>>>,
+    Fut: Future<Output = Result<Vec<T>, Box<dyn std::error::Error + Send + Sync>>>,
 {
     if let Ok(file) = File::open(&data_path) {
         let bitstream = DeflateDecoder::new(file);
@@ -54,7 +54,7 @@ where
 pub async fn request_paginated<T>(
     url_path: &str,
     lang: &Option<config::Language>,
-) -> Result<Vec<T>, Box<dyn std::error::Error>>
+) -> Result<Vec<T>, Box<dyn std::error::Error + Send + Sync>>
 where
     T: serde::Serialize,
     T: serde::de::DeserializeOwned,
@@ -75,7 +75,7 @@ where
         request_page::<T>(url_path, page_no, &mut Some(page_total), lang).await
     }))
     .buffered(PARALLEL_REQUESTS)
-    .collect::<Vec<Result<Vec<T>, Box<dyn std::error::Error>>>>()
+    .collect::<Vec<Result<Vec<T>, Box<dyn std::error::Error + Send + Sync>>>>()
     .await;
 
     for result in request_results.into_iter() {
@@ -91,7 +91,7 @@ async fn request_page<T>(
     page_no: usize,
     page_total: &mut Option<usize>,
     lang: &Option<config::Language>,
-) -> Result<Vec<T>, Box<dyn std::error::Error>>
+) -> Result<Vec<T>, Box<dyn std::error::Error + Send + Sync>>
 where
     T: serde::Serialize,
     T: serde::de::DeserializeOwned,
@@ -135,7 +135,7 @@ async fn cached_fetch<T>(
     url: &str,
     display: Option<&str>,
     cache_dir: &Path,
-) -> Result<T, Box<dyn std::error::Error>>
+) -> Result<T, Box<dyn std::error::Error + Send + Sync>>
 where
     T: serde::Serialize,
     T: serde::de::DeserializeOwned,
@@ -157,7 +157,7 @@ where
     Ok(v)
 }
 
-async fn fetch<T>(url: &str, display: Option<&str>) -> Result<T, Box<dyn std::error::Error>>
+async fn fetch<T>(url: &str, display: Option<&str>) -> Result<T, Box<dyn std::error::Error + Send + Sync>>
 where
     T: serde::Serialize,
     T: serde::de::DeserializeOwned,
