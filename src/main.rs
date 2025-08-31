@@ -8,17 +8,16 @@ use std::io;
 use std::io::Write;
 
 use iced::{
-	Element, Alignment, Background, Border, Theme,
+    task,
+	Element, Alignment, Background, Border, Theme, Task,
     widget::{
         Column, Text, TextInput,
         scrollable, text_input, pick_list, button, column, row, text, horizontal_rule, checkbox,
     }
 };
 
-use tokio::task;
 use crate::api::result_render;
 
-/*
 // synchronous
 /// api_search!(api::ApiSkill, api::Skill, &CONFIG.skills_file, "skills") -> results
 macro_rules! api_search {
@@ -33,8 +32,8 @@ macro_rules! api_search {
 		.await?
 	}
 }
-*/
 
+/*
 /// api_search_async!(api::ApiSkill, api::Skill, &CONFIG.skills_file, "skills") -> results
 macro_rules! api_search {
 	($api_type:ty, $type:ty, $file:expr, $endpoint:expr) => {
@@ -50,6 +49,7 @@ macro_rules! api_search {
 		}).await?
 	}
 }
+*/
 
 /// api_filter!(results_to_filter, search_term, in_reverse);
 macro_rules! api_filter {
@@ -209,11 +209,28 @@ struct Gw2Search {
 	search_mode: Option<SearchMode>,
 	reverse: bool,
 	results: Vec<String>,
+
+    search_state: SearchState,
+}
+
+enum SearchState {
+    Idle,
+    Searching { _abort: task::Handle }
+}
+
+impl SearchState {
+    fn is_idle(&self) -> bool {
+        match *self {
+            SearchState::Idle => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
 enum Message {
 	Search,
+    SearchResults(Vec<String>),
 	SearchTermChanged(String),
 	SearchModeSelected(SearchMode),
 	ReverseSearchChanged(bool),
@@ -227,11 +244,14 @@ impl Default for Gw2Search {
 			results: vec!(),
 			reverse: false,
 			search_mode: Some(SearchMode::Item),
+            search_state: SearchState::Idle,
 		}
 	}
 }
 
 impl Gw2Search {
+/*
+    // SIMPLE SYNCHRONOUS
 	fn search_to_results(&mut self) {
 		if let Some(mode) = self.search_mode {
 			match search_api(mode, self.search_term.clone(), self.reverse) {
@@ -242,21 +262,47 @@ impl Gw2Search {
 			}
 		}
 	}
+*/
 
-	pub fn update(&mut self, message: Message) {
+	pub fn update(&mut self, message: Message) -> Task<Message> {
 		match message {
 			Message::Search => {
-				self.search_to_results();
+                if self.search_state.is_idle() {
+                    let search_mode = self.search_mode.clone();
+                    let search_term = self.search_term.clone();
+                    let search_reverse = self.reverse.clone();
+                    if let Some(mode) = search_mode {
+                        let (task, handle) = Task::perform(
+                            async move { 
+                                match search_api(mode, search_term, search_reverse) {
+                                    Ok(results) => results,
+                                    Err(error) => panic!("Problem with search {:?}", error)
+                                }
+                            },
+                            |results| Message::SearchResults(results),
+                        ).abortable();
+                        self.search_state = SearchState::Searching { _abort: handle };
+                        return task;
+                    }
+                }
+                Task::none()
 			}
+            Message::SearchResults(results) => {
+                self.search_state = SearchState::Idle;
+                self.results = results;
+                Task::none()
+            }
 			Message::SearchTermChanged(term) => {
 				self.search_term = term;
+                Task::none()
 			}
 			Message::SearchModeSelected(search_mode) => {
 				self.search_mode = Some(search_mode);
-				self.search_to_results();
+                Task::none()
 			}
 			Message::ReverseSearchChanged(reverse_search) => {
 				self.reverse = reverse_search;
+                Task::none()
 			}
 			Message::DeleteData => {
 				for file in [&CONFIG.items_file, &CONFIG.skills_file, &CONFIG.traits_file, &CONFIG.specs_file, &CONFIG.professions_file, &CONFIG.pets_file, &CONFIG.legends_file] {
@@ -264,6 +310,7 @@ impl Gw2Search {
 						eprintln!("Failed to remove file {}: {}", file.display(), e);
 					}
 				}
+                Task::none()
 			}
 		}
 	}
@@ -299,12 +346,24 @@ impl Gw2Search {
 				horizontal_rule(30),
 				row![
 					text_input("Search Term", &self.search_term)
+						.size(40)
 						.on_input(|s| Message::SearchTermChanged(s))
-						.on_submit(Message::Search)
-						.size(40),
+                        .on_submit_maybe(
+                            if self.search_state.is_idle() {
+                                Some(Message::Search)
+                            } else {
+                                None
+                            }
+                        ),
 					column![
 						row![
-							button("SEARCH").on_press(Message::Search),
+							button("SEARCH").on_press_maybe(
+                                if self.search_state.is_idle() {
+                                    Some(Message::Search)
+                                } else {
+                                    None
+                                }
+                            ),
 							pick_list(
 								&SearchMode::ALL[..],
 								self.search_mode,
@@ -314,7 +373,13 @@ impl Gw2Search {
 						],
 						button("Delete API Cache")
 							.style(button::danger)
-							.on_press(Message::DeleteData),
+							.on_press_maybe(
+                                if self.search_state.is_idle() {
+                                    Some(Message::DeleteData)
+                                } else {
+                                    None
+                                }
+                            ),
 					]
 				],
 				scrollable(results)
