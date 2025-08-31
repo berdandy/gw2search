@@ -69,7 +69,9 @@ where
     page_no += 1;
 
     // try fetching one extra page in case page total increased while paginating
-    let page_total = page_total.expect("Missing page total") + 1;
+    // ***this is not needed for gw2search, all mostly static, this is holdover code from trade stuff
+    // let page_total = page_total.expect("Missing page total") + 1;
+    let page_total = page_total.expect("Missing page total");
 
     let request_results = stream::iter((page_no..page_total).map(|page_no| async move {
         request_page::<T>(url_path, page_no, &mut Some(page_total), lang).await
