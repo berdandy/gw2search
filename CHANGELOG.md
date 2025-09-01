@@ -1,6 +1,30 @@
 <!-- next-url -->
 [Unreleased]: https://github.com/assert-rs/predicates-rs/compare/v0.9.0...HEAD
 
+## 0.11.1 (2025-09-01)
+
+### Bug Fixes
+
+ - <csr-id-3276f8fb72d2dea2d2c2d837acf458008b5bde9b/> updated api schema version to today
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 1 commit contributed to the release.
+ - 1 commit was understood as [conventional](https://www.conventionalcommits.org).
+ - 0 issues like '(#ID)' were seen in commit messages
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **Uncategorized**
+    - Updated api schema version to today ([`3276f8f`](https://github.com/berdandy/gw2search/commit/3276f8fb72d2dea2d2c2d837acf458008b5bde9b))
+</details>
+
 ## 0.11.0 (2025-09-01)
 
 ### New Features

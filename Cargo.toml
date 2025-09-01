@@ -1,6 +1,6 @@
 [package]
 name = "gw2search"
-version = "0.11.0"
+version = "0.11.1"
 description = "Searches in the gw2 api. Supports items, skills, traits, specializations, professions, pets, legends."
 edition = "2021"
 authors = ["Andy Berdan <andy@berdan.ca>"]
