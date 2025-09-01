@@ -6,13 +6,14 @@ use config::CONFIG;
 use std::env;
 use std::io;
 use std::io::Write;
+use std::path::PathBuf;
 
 use iced::{
     task,
 	Element, Alignment, Background, Border, Theme, Task,
     widget::{
         Column, Text, TextInput,
-        scrollable, text_input, pick_list, button, column, row, text, horizontal_rule, checkbox,
+        container, scrollable, text_input, pick_list, button, column, row, text, horizontal_rule, checkbox,
     }
 };
 
@@ -32,24 +33,6 @@ macro_rules! api_search {
 		.await?
 	}
 }
-
-/*
-/// api_search_async!(api::ApiSkill, api::Skill, &CONFIG.skills_file, "skills") -> results
-macro_rules! api_search {
-	($api_type:ty, $type:ty, $file:expr, $endpoint:expr) => {
-		task::spawn(async move {
-			request::get_data($file, || async {
-				let api_results: Vec<$api_type> = request::request_paginated($endpoint, &CONFIG.lang).await?;
-				Ok(api_results
-					.into_iter()
-					.map(|api_result| <$type>::from(api_result))
-					.collect())
-			})
-			.await.unwrap()
-		}).await?
-	}
-}
-*/
 
 /// api_filter!(results_to_filter, search_term, in_reverse);
 macro_rules! api_filter {
@@ -131,6 +114,22 @@ impl SearchMode {
 		SearchMode::Legend,
 		SearchMode::Itemstat,
     ];
+
+    fn to_caches(self) -> Vec<&'static PathBuf> {
+        match self {
+            SearchMode::Any => vec![&CONFIG.items_file, &CONFIG.skills_file, &CONFIG.traits_file, &CONFIG.specs_file, &CONFIG.professions_file, &CONFIG.pets_file, &CONFIG.legends_file, &CONFIG.itemstats_file],
+            SearchMode::Item => vec![&CONFIG.items_file],
+            SearchMode::Skill => vec![&CONFIG.skills_file],
+            SearchMode::Trait => vec![&CONFIG.traits_file],
+            SearchMode::Spec => vec![&CONFIG.specs_file],
+            SearchMode::EliteSpec => vec![&CONFIG.professions_file],
+            SearchMode::Profession => vec![&CONFIG.professions_file],
+            SearchMode::Pet => vec![&CONFIG.pets_file],
+            SearchMode::Legend => vec![&CONFIG.legends_file],
+            SearchMode::Itemstat => vec![&CONFIG.itemstats_file],
+            SearchMode::Skip => vec![]
+        } 
+    }
 }
 impl std::fmt::Display for SearchMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -250,20 +249,6 @@ impl Default for Gw2Search {
 }
 
 impl Gw2Search {
-/*
-    // SIMPLE SYNCHRONOUS
-	fn search_to_results(&mut self) {
-		if let Some(mode) = self.search_mode {
-			match search_api(mode, self.search_term.clone(), self.reverse) {
-				Ok(results) => {
-					self.results = results;
-				}
-				Err(error) => panic!("Problem with search {:?}", error)
-			}
-		}
-	}
-*/
-
 	pub fn update(&mut self, message: Message) -> Task<Message> {
 		match message {
 			Message::Search => {
@@ -305,22 +290,23 @@ impl Gw2Search {
                 Task::none()
 			}
 			Message::DeleteData => {
-				for file in [&CONFIG.items_file, &CONFIG.skills_file, &CONFIG.traits_file, &CONFIG.specs_file, &CONFIG.professions_file, &CONFIG.pets_file, &CONFIG.legends_file] {
-					if let Err(e) = config::remove_data_file(file) {
-						eprintln!("Failed to remove file {}: {}", file.display(), e);
-					}
-				}
+                if let Some(search_mode) = self.search_mode {
+                    for file in search_mode.to_caches() {
+                        if let Err(e) = config::remove_data_file(file) {
+                            eprintln!("Failed to remove file {}: {}", file.display(), e);
+                        }
+                    }
+                }
                 Task::none()
 			}
 		}
 	}
 
-	pub fn view(&self) -> Element<Message> {
+	pub fn view(&self) -> Element<'_, Message> {
 		let results = self.results.iter().fold(
 			Column::new().push(Text::new("")),
 			|column: Column<Message>, result| {
 				column.push(
-					// Text::new(result) // looks good
 					TextInput::new("Result", result).style(|theme: &Theme, _| {
                         let palette = theme.extended_palette();
                         crate::text_input::Style 
@@ -356,6 +342,11 @@ impl Gw2Search {
                             }
                         ),
 					column![
+                        pick_list(
+                            &SearchMode::ALL[..],
+                            self.search_mode,
+                            Message::SearchModeSelected,
+                        ),
 						row![
 							button("SEARCH").on_press_maybe(
                                 if self.search_state.is_idle() {
@@ -364,12 +355,10 @@ impl Gw2Search {
                                     None
                                 }
                             ),
-							pick_list(
-								&SearchMode::ALL[..],
-								self.search_mode,
-								Message::SearchModeSelected,
-							),
-							checkbox("Reverse", self.reverse).on_toggle(Message::ReverseSearchChanged),
+                            container(
+                                checkbox("Reverse", self.reverse)
+                                    .on_toggle(Message::ReverseSearchChanged),
+                            ).align_right(100)
 						],
 						button("Delete API Cache")
 							.style(button::danger)
