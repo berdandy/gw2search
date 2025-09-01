@@ -18,7 +18,7 @@ use crate::config;
 const PARALLEL_REQUESTS: usize = 10;
 const MAX_PAGE_SIZE: i32 = 200; // https://wiki.guildwars2.com/wiki/API:2#Paging
 const MAX_ITEM_ID_LENGTH: i32 = 200; // error returned for greater than this amount
-const API_VERSION: &str = "2024-03-25T00:00:00Z";
+const API_VERSION: &str = "2025-09-01T00:00:00Z";
 
 pub async fn get_data<T, Fut>(
     data_path: impl AsRef<Path>,
