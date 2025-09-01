@@ -1,6 +1,35 @@
 <!-- next-url -->
 [Unreleased]: https://github.com/assert-rs/predicates-rs/compare/v0.9.0...HEAD
 
+## 0.11.0 (2025-09-01)
+
+### New Features
+
+ - <csr-id-f20a7c54051e1ba3b58c426158f1afd6f3173470/> changed delete api cache to respect search mode
+ - <csr-id-fca62751378e6cf5e472bc1664daee9c86bee9f1/> added async handling for API downloads
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 4 commits contributed to the release over the course of 9 calendar days.
+ - 10 days passed between releases.
+ - 2 commits were understood as [conventional](https://www.conventionalcommits.org).
+ - 0 issues like '(#ID)' were seen in commit messages
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **Uncategorized**
+    - Changed delete api cache to respect search mode ([`f20a7c5`](https://github.com/berdandy/gw2search/commit/f20a7c54051e1ba3b58c426158f1afd6f3173470))
+    - Added async handling for API downloads ([`fca6275`](https://github.com/berdandy/gw2search/commit/fca62751378e6cf5e472bc1664daee9c86bee9f1))
+    - +1 to request removed ([`86516ee`](https://github.com/berdandy/gw2search/commit/86516eef2208af06c2c2c37fc0739daeb5b9f7ab))
+    - MORE WIP ([`29bf198`](https://github.com/berdandy/gw2search/commit/29bf198895e456cdaf8bdb65cccee1104db863ff))
+</details>
+
 ## 0.10.1 (2025-08-21)
 
 ### New Features
