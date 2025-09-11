@@ -19,70 +19,6 @@ use iced::{
 
 use crate::api::result_render;
 
-// synchronous
-/// api_search!(api::ApiSkill, api::Skill, &CONFIG.skills_file, "skills") -> results
-macro_rules! api_search {
-	($api_type:ty, $type:ty, $file:expr, $endpoint:expr) => {
-		request::get_data($file, || async {
-			let api_results: Vec<$api_type> = request::request_paginated($endpoint, &CONFIG.lang).await?;
-			Ok(api_results
-				.into_iter()
-				.map(|api_result| <$type>::from(api_result))
-				.collect())
-		})
-		.await?
-	}
-}
-
-/// api_filter!(results_to_filter, search_term, in_reverse);
-macro_rules! api_filter {
-	($results:expr, $search:expr, $reverse:expr) => {
-		$results
-			.iter()
-			.filter_map(|r| match $reverse {
-				false => match &r.name.to_ascii_lowercase().contains(&$search.to_ascii_lowercase()) {
-					true => Some(r),
-					false => None
-				},
-				true => match &r.id.to_string() == &$search.to_ascii_lowercase() {
-					true => Some(r),
-					false => None
-				}
-			})
-			.map(|r| result_render(r))
-			.collect::<Vec<String>>()
-	};
-	($results:expr, $search:expr, $reverse:expr, $annotation:expr) => {
-		$results
-			.iter()
-			.filter_map(|r| match $reverse {
-				false => match &r.name.to_ascii_lowercase().contains(&$search.to_ascii_lowercase()) {
-					true => Some(r),
-					false => None
-				},
-				true => match &r.id.to_string() == &$search.to_ascii_lowercase() {
-					true => Some(r),
-					false => None
-				}
-			})
-			.map(|r| result_render(r) + $annotation)
-			.collect::<Vec<String>>()
-	}
-}
-
-/// api_searcher!(api::ApiSkill, api::Skill, &CONFIG.skills_file, "skills", search_term, in_reverse);
-macro_rules! api_searcher {
-	($api_type:ty, $type:ty, $file:expr, $endpoint:expr, $search:expr, $reverse:expr) => {
-		let results = api_search!($api_type, $type, $file, $endpoint);
-
-		if $search.is_empty() && !CONFIG.csv && !CONFIG.json {
-			return Ok(vec![]);
-		}
-
-		return Ok(api_filter!(results, $search, $reverse));
-	}
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[derive(Default)]
 pub enum SearchMode {
@@ -387,28 +323,28 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
             Ok(vec![])
         },
 		SearchMode::Skill => {
-			api_searcher!(api::ApiSkill, api::Skill, &CONFIG.skills_file, "skills", search_term, in_reverse);
+			api::searcher!(api::ApiSkill, api::Skill, &CONFIG.skills_file, "skills", search_term, in_reverse);
 		}
 		SearchMode::Trait => {
-			api_searcher!(api::ApiTrait, api::Trait, &CONFIG.traits_file, "traits", search_term, in_reverse);
+			api::searcher!(api::ApiTrait, api::Trait, &CONFIG.traits_file, "traits", search_term, in_reverse);
 		}
 		SearchMode::Item => {
-			api_searcher!(api::ApiItem, api::Item, &CONFIG.items_file, "items", search_term, in_reverse);
+			api::searcher!(api::ApiItem, api::Item, &CONFIG.items_file, "items", search_term, in_reverse);
 		}
 		SearchMode::Spec => {
-			api_searcher!(api::ApiSpec, api::Spec, &CONFIG.specs_file, "specializations", search_term, in_reverse);
+			api::searcher!(api::ApiSpec, api::Spec, &CONFIG.specs_file, "specializations", search_term, in_reverse);
 		}
 		SearchMode::Profession => {
-			api_searcher!(api::ApiProfession, api::Profession, &CONFIG.professions_file, "professions", search_term, in_reverse);
+			api::searcher!(api::ApiProfession, api::Profession, &CONFIG.professions_file, "professions", search_term, in_reverse);
 		}
 		SearchMode::Itemstat => {
-			api_searcher!(api::ApiItemstat, api::Itemstat, &CONFIG.itemstats_file, "itemstats", search_term, in_reverse);
+			api::searcher!(api::ApiItemstat, api::Itemstat, &CONFIG.itemstats_file, "itemstats", search_term, in_reverse);
 		}
 		SearchMode::Pet => {
-			api_searcher!(api::ApiPet, api::Pet, &CONFIG.pets_file, "pets", search_term, in_reverse);
+			api::searcher!(api::ApiPet, api::Pet, &CONFIG.pets_file, "pets", search_term, in_reverse);
 		}
 		SearchMode::EliteSpec => {
-			let elite_specs: Vec<api::Spec> = api_search!(api::ApiSpec, api::Spec, &CONFIG.specs_file, "specializations")
+			let elite_specs: Vec<api::Spec> = api::search!(api::ApiSpec, api::Spec, &CONFIG.specs_file, "specializations")
 				.iter()
 				.filter(|s| s.elite)
 				.cloned()
@@ -418,11 +354,11 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 				return Ok(vec![]);
 			}
 
-			Ok(api_filter!(elite_specs, search_term, in_reverse))
+			Ok(api::filter!(elite_specs, search_term, in_reverse))
 		}
 		SearchMode::Legend => {
-			// can't use api_searcher! macro because we need to doctor the results:
-			let mut results = api_search!(api::ApiLegend, api::Legend, &CONFIG.legends_file, "legends");
+			// can't use api::searcher! macro because we need to doctor the results:
+			let mut results = api::search!(api::ApiLegend, api::Legend, &CONFIG.legends_file, "legends");
 
 			// these are not in the API, so we make them up
 			results.push(api::Legend {
@@ -450,17 +386,17 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 				return Ok(vec![]);
 			}
 
-			return Ok(api_filter!(results, search_term, in_reverse));
+			return Ok(api::filter!(results, search_term, in_reverse));
 		}
 		SearchMode::Any => {
-			let skills = api_search!(api::ApiSkill, api::Skill, &CONFIG.skills_file, "skills");
-			let traits = api_search!(api::ApiTrait, api::Trait, &CONFIG.traits_file, "traits");
-			let items = api_search!(api::ApiItem, api::Item, &CONFIG.items_file, "items");
-			let specs = api_search!(api::ApiSpec, api::Spec, &CONFIG.specs_file, "specializations");
-			let professions = api_search!(api::ApiProfession, api::Profession, &CONFIG.professions_file, "professions");
-			let pets = api_search!(api::ApiPet, api::Pet, &CONFIG.pets_file, "pets");
-			let itemstats = api_search!(api::ApiItemstat, api::Itemstat, &CONFIG.itemstats_file, "itemstats");
-			let legends = api_search!(api::ApiLegend, api::Legend, &CONFIG.legends_file, "legends");
+			let skills = api::search!(api::ApiSkill, api::Skill, &CONFIG.skills_file, "skills");
+			let traits = api::search!(api::ApiTrait, api::Trait, &CONFIG.traits_file, "traits");
+			let items = api::search!(api::ApiItem, api::Item, &CONFIG.items_file, "items");
+			let specs = api::search!(api::ApiSpec, api::Spec, &CONFIG.specs_file, "specializations");
+			let professions = api::search!(api::ApiProfession, api::Profession, &CONFIG.professions_file, "professions");
+			let pets = api::search!(api::ApiPet, api::Pet, &CONFIG.pets_file, "pets");
+			let itemstats = api::search!(api::ApiItemstat, api::Itemstat, &CONFIG.itemstats_file, "itemstats");
+			let legends = api::search!(api::ApiLegend, api::Legend, &CONFIG.legends_file, "legends");
 
 			// ------------------------------------------------------------
 
@@ -471,28 +407,45 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 			let mut results: Vec<String> = vec![];
             if CONFIG.superquiet
             {
-                results.extend(api_filter!(skills, search_term, in_reverse));
-                results.extend(api_filter!(traits, search_term, in_reverse));
-                results.extend(api_filter!(items, search_term, in_reverse));
-                results.extend(api_filter!(professions, search_term, in_reverse));
-                results.extend(api_filter!(specs, search_term, in_reverse));
-                results.extend(api_filter!(pets, search_term, in_reverse));
-                results.extend(api_filter!(itemstats, search_term, in_reverse));
-                results.extend(api_filter!(legends, search_term, in_reverse));
+                results.extend(api::filter!(skills, search_term, in_reverse));
+                results.extend(api::filter!(traits, search_term, in_reverse));
+                results.extend(api::filter!(items, search_term, in_reverse));
+                results.extend(api::filter!(professions, search_term, in_reverse));
+                results.extend(api::filter!(specs, search_term, in_reverse));
+                results.extend(api::filter!(pets, search_term, in_reverse));
+                results.extend(api::filter!(itemstats, search_term, in_reverse));
+                results.extend(api::filter!(legends, search_term, in_reverse));
             }
             else
             {
-                results.extend(api_filter!(skills, search_term, in_reverse, " [SKILL]"));
-                results.extend(api_filter!(traits, search_term, in_reverse, " [TRAIT]"));
-                results.extend(api_filter!(items, search_term, in_reverse, " [ITEM]"));
-                results.extend(api_filter!(professions, search_term, in_reverse, " [PROFESSION]"));
-                results.extend(api_filter!(specs, search_term, in_reverse, " [SPECIALIZATION]"));
-                results.extend(api_filter!(pets, search_term, in_reverse, " [PET]"));
-                results.extend(api_filter!(itemstats, search_term, in_reverse, " [ITEMSTAT]"));
-                results.extend(api_filter!(legends, search_term, in_reverse, " [LEGEND]"));
+                results.extend(api::filter!(skills, search_term, in_reverse, " [SKILL]"));
+                results.extend(api::filter!(traits, search_term, in_reverse, " [TRAIT]"));
+                results.extend(api::filter!(items, search_term, in_reverse, " [ITEM]"));
+                results.extend(api::filter!(professions, search_term, in_reverse, " [PROFESSION]"));
+                results.extend(api::filter!(specs, search_term, in_reverse, " [SPECIALIZATION]"));
+                results.extend(api::filter!(pets, search_term, in_reverse, " [PET]"));
+                results.extend(api::filter!(itemstats, search_term, in_reverse, " [ITEMSTAT]"));
+                results.extend(api::filter!(legends, search_term, in_reverse, " [LEGEND]"));
             }
 
 			Ok(results)
 		}
+	}
+}
+
+mod test {
+	use crate::*;
+
+	#[tokio::test]
+	async fn test_skills() {
+		let result = request::get_data(&CONFIG.items_file, || async {
+			let api_results: Vec<api::ApiSkill> = request::request_paginated("skills", &CONFIG.lang).await?;
+			Ok(api_results
+				.into_iter()
+				.map(|api_result| <api::Skill>::from(api_result))
+				.collect())
+		})
+		.await;
+		assert!(result.is_ok());
 	}
 }

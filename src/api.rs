@@ -16,6 +16,74 @@ use lazy_static::lazy_static;
 
 use format_render::FormatRender;
 
+// synchronous
+/// api_search!(api::ApiSkill, api::Skill, &CONFIG.skills_file, "skills") -> results
+macro_rules! search {
+	($api_type:ty, $type:ty, $file:expr, $endpoint:expr) => {
+		request::get_data($file, || async {
+			let api_results: Vec<$api_type> = request::request_paginated($endpoint, &CONFIG.lang).await?;
+			Ok(api_results
+				.into_iter()
+				.map(|api_result| <$type>::from(api_result))
+				.collect())
+		})
+		.await?
+	}
+}
+
+/// api_filter!(results_to_filter, search_term, in_reverse);
+macro_rules! filter {
+	($results:expr, $search:expr, $reverse:expr) => {
+		$results
+			.iter()
+			.filter_map(|r| match $reverse {
+				false => match &r.name.to_ascii_lowercase().contains(&$search.to_ascii_lowercase()) {
+					true => Some(r),
+					false => None
+				},
+				true => match &r.id.to_string() == &$search.to_ascii_lowercase() {
+					true => Some(r),
+					false => None
+				}
+			})
+			.map(|r| result_render(r))
+			.collect::<Vec<String>>()
+	};
+	($results:expr, $search:expr, $reverse:expr, $annotation:expr) => {
+		$results
+			.iter()
+			.filter_map(|r| match $reverse {
+				false => match &r.name.to_ascii_lowercase().contains(&$search.to_ascii_lowercase()) {
+					true => Some(r),
+					false => None
+				},
+				true => match &r.id.to_string() == &$search.to_ascii_lowercase() {
+					true => Some(r),
+					false => None
+				}
+			})
+			.map(|r| result_render(r) + $annotation)
+			.collect::<Vec<String>>()
+	}
+}
+
+/// api_searcher!(api::ApiSkill, api::Skill, &CONFIG.skills_file, "skills", search_term, in_reverse);
+macro_rules! searcher {
+	($api_type:ty, $type:ty, $file:expr, $endpoint:expr, $search:expr, $reverse:expr) => {
+		let results = api::search!($api_type, $type, $file, $endpoint);
+
+		if $search.is_empty() && !CONFIG.csv && !CONFIG.json {
+			return Ok(vec![]);
+		}
+
+		return Ok(api::filter!(results, $search, $reverse));
+	}
+}
+
+pub(crate) use search;
+pub(crate) use filter;
+pub(crate) use searcher;
+
 pub trait FormatRender {
     fn pretty(&self) -> String;
     fn id_only(&self) -> String;
