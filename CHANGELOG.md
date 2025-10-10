@@ -1,6 +1,31 @@
 <!-- next-url -->
 [Unreleased]: https://github.com/assert-rs/predicates-rs/compare/v0.9.0...HEAD
 
+## 0.11.2 (2025-10-10)
+
+### New Features
+
+ - <csr-id-37a17632d797585cba3466254010cdcc9958fd8f/> removed doctored legend handling because the api has alliance and entity/conduit/razah now
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 1 commit contributed to the release.
+ - 39 days passed between releases.
+ - 1 commit was understood as [conventional](https://www.conventionalcommits.org).
+ - 0 issues like '(#ID)' were seen in commit messages
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **Uncategorized**
+    - Removed doctored legend handling because the api has alliance and entity/conduit/razah now ([`37a1763`](https://github.com/berdandy/gw2search/commit/37a17632d797585cba3466254010cdcc9958fd8f))
+</details>
+
 ## 0.11.1 (2025-09-01)
 
 ### Bug Fixes
