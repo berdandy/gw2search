@@ -677,6 +677,8 @@ lazy_static! {
         ( String::from("Legend4"), "Demon/Mallyx" ),
         ( String::from("Legend5"), "Renegade/Kalla" ),
         ( String::from("Legend6"), "Centaur/Ventari" ),
+        ( String::from("Legend7"), "Alliance/KurzickSaintViktor+LuxonArchemorus" ),
+        ( String::from("Legend8"), "Entity/Razah" ),
     ]);
 }
 

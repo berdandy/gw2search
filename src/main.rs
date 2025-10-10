@@ -407,6 +407,9 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 		SearchMode::Pet => {
 			api_searcher!(api::ApiPet, api::Pet, &CONFIG.pets_file, "pets", search_term, in_reverse);
 		}
+		SearchMode::Legend => {
+			api_searcher!(api::ApiLegend, api::Legend, &CONFIG.legends_file, "legends", search_term, in_reverse);
+		}
 		SearchMode::EliteSpec => {
 			let elite_specs: Vec<api::Spec> = api_search!(api::ApiSpec, api::Spec, &CONFIG.specs_file, "specializations")
 				.iter()
@@ -419,38 +422,6 @@ async fn search_api(search_mode: SearchMode, search_term: String, in_reverse: bo
 			}
 
 			Ok(api_filter!(elite_specs, search_term, in_reverse))
-		}
-		SearchMode::Legend => {
-			// can't use api_searcher! macro because we need to doctor the results:
-			let mut results = api_search!(api::ApiLegend, api::Legend, &CONFIG.legends_file, "legends");
-
-			// these are not in the API, so we make them up
-			results.push(api::Legend {
-					id: String::from("Legend7"),
-					name: String::from("Alliance/Luxon/Archemorus"),
-
-					code: 7,
-					swap: 62891,
-					heal: 62719,
-					utilities: [62832, 62962, 62878],
-					elite: 62942,
-			});
-			results.push(api::Legend {
-                id: String::from("Legend8"),
-                name: String::from("Alliance/Kurzick/Saint Viktor"),
-
-                code: 8,
-                swap: 62891,
-                heal: 62679,
-                utilities: [62701, 62941, 62796],
-                elite: 62686,
-			});
-
-			if search_term.is_empty() && !CONFIG.csv && !CONFIG.json {
-				return Ok(vec![]);
-			}
-
-			return Ok(api_filter!(results, search_term, in_reverse));
 		}
 		SearchMode::Any => {
 			let skills = api_search!(api::ApiSkill, api::Skill, &CONFIG.skills_file, "skills");
