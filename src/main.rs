@@ -13,7 +13,7 @@ use iced::{
 	Element, Alignment, Background, Border, Theme, Task,
     widget::{
         Column, Text, TextInput,
-        container, scrollable, text_input, pick_list, button, column, row, text, horizontal_rule, checkbox,
+        container, scrollable, text_input, pick_list, button, column, row, text, rule, checkbox,
     }
 };
 
@@ -198,7 +198,7 @@ pub fn main() -> iced::Result {
         }
         Ok(())
     } else {
-		iced::run("GW2 Search", Gw2Search::update, Gw2Search::view)
+		iced::run(Gw2Search::update, Gw2Search::view)
     }
 }
 
@@ -329,7 +329,7 @@ impl Gw2Search {
 		scrollable(
 			column![
 				text("gw2search").size(32),
-				horizontal_rule(30),
+				rule::horizontal(30),
 				row![
 					text_input("Search Term", &self.search_term)
 						.size(40)
@@ -356,7 +356,8 @@ impl Gw2Search {
                                 }
                             ),
                             container(
-                                checkbox("Reverse", self.reverse)
+                                checkbox(self.reverse)
+                                    .label("Reverse")
                                     .on_toggle(Message::ReverseSearchChanged),
                             ).align_right(100)
 						],

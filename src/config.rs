@@ -6,9 +6,9 @@ use std::str::FromStr;
 use std::time::{Duration, SystemTime};
 
 use once_cell::sync::Lazy;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use structopt::StructOpt;
-use strum::{Display, EnumString, EnumVariantNames, VariantNames};
+use strum::{EnumString, EnumVariantNames, VariantNames};
 
 use lazy_static::lazy_static;
 
@@ -345,31 +345,6 @@ fn get_lang<Language: FromStr + VariantNames>(
         )
         .into()
     })
-}
-
-#[derive(
-    Copy, Clone, Debug, Serialize, Deserialize, PartialEq, Display, EnumString, EnumVariantNames,
-)]
-pub enum Discipline {
-    Artificer,
-    Armorsmith,
-    Chef,
-    Huntsman,
-    Jeweler,
-    Leatherworker,
-    Tailor,
-    Weaponsmith,
-    Scribe,
-    // A few more for compatibility with gw2efficiency
-    #[strum(serialize = "Mystic Forge")]
-    MysticForge,
-    #[strum(serialize = "Double Click")]
-    DoubleClick,
-    Salvage,
-    Merchant,
-    Charge,
-    Achievement,
-    Growing,
 }
 
 fn ensure_dir(dir: &PathBuf) -> Result<&PathBuf, Box<dyn std::error::Error>> {
